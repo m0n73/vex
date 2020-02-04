@@ -5,12 +5,18 @@ to `BIND`. The other end of the connection is either `vex`
 binding to a port on the local machine (`-b` option), or 
 connecting to the address specified with `-l`.
 
+`vex` expects a proxy list file, one per-line in format `address:port`.
+`vex` supports domain names, IPv4, and IPv6. The latter *must* be in the
+following format: `[ipv6]:port` (e.g. `[fe80::1337:2]:4201`). 
+You cannot specify a domain name for the `-t` option (you would almost never
+want to do that).
+
 ## Examples
 ### Requesting BIND with a SOCKS4 proxy. 
 In this example `vex` will connect to another machine and forward all communications there.
 ```
-[root@linx]$ ./vex -f socks4list.txt -l <another_machine_address>:9999  
-[*] Connecting to <proxy)address>:<proxy_port> ... Success.
+[root@linux]$ ./vex -f socks4list.txt -l <another_machine_address>:9999  
+[*] Connecting to <proxy_address>:<proxy_port> ... Success.
 [*] SOCKS4 MSG: GRANTED (<bound_proxy_address>:<bound_proxy_port>)
 ```
 At this point the reverse connection can be initated to the proxy and will
