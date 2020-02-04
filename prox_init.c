@@ -15,7 +15,6 @@ void usage(const char *name)
     fprintf(stderr, "  -u\tusername\tSpecify a username for SOCKS5 authentication,\n");
     fprintf(stderr, "\t\t\tor for the SOCKS4 userid field.\n");
     fprintf(stderr, "  -p\tpassword\tSpecify a password for SOCKS5 authentication.\n");
-    fprintf(stderr, "  -a\t\t\tUse Username/Password SOCKS5 authentication.\n");
     fprintf(stderr, "  -b\t\t\tInstead of connecting to the local address\n");
     fprintf(stderr, "\t\t\tbind and listen at that address.\n");
     fprintf(stderr, "  -a\t\t\tUse User/Pass Authentication (SOCKS5).\n");

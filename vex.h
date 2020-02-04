@@ -1,5 +1,5 @@
-#ifndef FINN_H
-#define FINN_H
+#ifndef VEX_H
+#define VEX_H
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -38,7 +38,7 @@
 #include <socks.h>
 #include <parse.h>
 
-void usage(const char *name) __attribute__((noreturn));
-struct proxy_config *init_proxy(int argc, char **argv);
+void usage(const char *) __attribute__((noreturn));
+struct proxy_config *init_proxy(int, char **);
 void free_proxy_config(struct proxy_config *);
 #endif

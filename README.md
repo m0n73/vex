@@ -63,7 +63,6 @@ it's your responsibility. Please only use vex for legit purposes.
   -u	username	Specify a username for SOCKS5 authentication,
 			or for the SOCKS4 userid field.
   -p	password	Specify a password for SOCKS5 authentication.
-  -a			Use Username/Password SOCKS5 authentication.
   -b			Instead of connecting to the local address
 			bind and listen at that address.
   -a			Use User/Pass Authentication (SOCKS5).
