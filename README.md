@@ -50,26 +50,7 @@ Domain names are not supported when specifying the target address (via `-t`).
 
 ### An illustrated SOCKS5 example.
 
-```
-                                                         |
-                         1.3.3.7:4201                    |
- 1.2.3.4                       _                         | [vex@1.2.3.4]$ cat sockslist.txt 
-  ___   _                     |=| local                  | 4.3.2.1:1080
- [(_)] |=|                    |_| listner                | 2.1.4.8:8078
-  '-`  |_|-,                   ^                         | 4.2.0.6:9420
- /mmm/  ^  |                   |                         | [vex@1.2.3.4]$ ./vex -f sockslist.txt -l 1.3.3.7:4201 \
-  vex   |  '-------------------' _                       | > -5 -t 1.4.7.3:0 # target port is irrelevant
-         \                      |=| 4.3.2.1:56231        | [*] Connecting to 4.3.2.1:1080 ... Success.
-          \       4.3.2.1.:1080 |=|<------.  reverse     | [*] SOCKS5 MSG: SUCCESS (4.3.2.1:56231)
-           \_S_O_C_K_S_ _ _,--->|_|       | connection   | [*] SOCKS5 MSG: SUCCESS (1.4.7.3:62512)
-                   B I N D     SOCKS5     '~.            |                  ...
-                               server       |            | [vex@1.2.3.4]$ # The second SUCCESS message means 
-                                            `--._   ___  | [vex@1.2.3.4]$ # the target machine sucessfuly made 
-                                1.4.7.3:62512  |=| [(_)] | [vex@1.2.3.4]$ # a reverse connection The target must 
-                                               |_|  '-`  | [vex@1.2.3.4]$ # receive the connection info out-of-band.
-                                                   /mmm/ |
-                                                  target |
-```
+![illustrated](img/illustrated.jpg)
 
 ### Requesting BIND with a SOCKS4 proxy. 
 In this example `vex` will forward all communications from the bound SOCKS4
