@@ -2,8 +2,9 @@
 
 void usage(const char *name) 
 {
-    fprintf(stderr, "%s -f proxy_list -l addr:port [ -t addr:port ] [ -u username ] [ -p password ] [ -5 ] [ -a ] [ -b ] [ -h ]\n\n",
+    fprintf(stderr, "%s < -f proxy_list > < -l addr:port > [ -t addr:port ] [ -u username ] [ -p password ] [ -5 ] [ -a ] [ -b ] [ -h ]\n\n",
             name);
+    fprintf(stderr, "GENERAL OPTIONS:\n");
     fprintf(stderr, "  -f\tproxy_list\tPath to the proxy list. Must be in\n");
     fprintf(stderr, "\t\t\taddress:port format, one per line.\n");
     fprintf(stderr, "  -l\taddr:port\tLocal address and port the proxy\n");
@@ -14,12 +15,13 @@ void usage(const char *name)
     fprintf(stderr, "\t\t\tto the broadcast address and port 0.\n");
     fprintf(stderr, "  -u\tusername\tSpecify a username for SOCKS5 authentication,\n");
     fprintf(stderr, "\t\t\tor for the SOCKS4 userid field.\n");
-    fprintf(stderr, "  -p\tpassword\tSpecify a password for SOCKS5 authentication.\n");
     fprintf(stderr, "  -b\t\t\tInstead of connecting to the local address\n");
     fprintf(stderr, "\t\t\tbind and listen at that address.\n");
-    fprintf(stderr, "  -a\t\t\tUse User/Pass Authentication (SOCKS5).\n");
-    fprintf(stderr, "  -5\t\t\tUse SOCKS5 protocol (SOCKS4 is the default).\n");
     fprintf(stderr, "  -h\t\t\tDisplay this message.\n");
+    fprintf(stderr, "\nSOCKS5 OPTIONS:\n");
+    fprintf(stderr, "  -5\t\t\tUse SOCKS5 protocol (SOCKS4 is the default).\n");
+    fprintf(stderr, "  -a\t\t\tUse User/Pass Authentication.\n");
+    fprintf(stderr, "  -p\tpassword\tSpecify a password for SOCKS5 authentication.\n");
 
     exit(EXIT_FAILURE);
 }

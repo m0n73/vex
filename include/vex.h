@@ -32,11 +32,11 @@
 #define MAX_ADDR_PORT   INET6_ADDRSTRLEN + MAX_PORT + 2
 #define IOBUFF_SZ       8192
 
-#include <util.h>
-#include <config.h>
-#include <vex_socket.h>
-#include <socks.h>
-#include <parse.h>
+#include "v_util.h"
+#include "v_config.h"
+#include "v_socket.h"
+#include "v_socks.h"
+#include "v_parse.h"
 
 void usage(const char *) __attribute__((noreturn));
 struct proxy_config *init_proxy(int, char **);

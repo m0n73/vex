@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef V_CONFIG_H
+#define V_CONFIG_H
 
 #define MAX_METHODS         0xff
 

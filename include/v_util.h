@@ -1,5 +1,5 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef V_UTIL_H
+#define V_UTIL_H
 
 int write_a(int, void *, size_t);
 int read_a(int, void *, size_t);

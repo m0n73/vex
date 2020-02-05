@@ -1,5 +1,5 @@
-#ifndef SOCKS_H
-#define SOCKS_H
+#ifndef V_SOCKS_H
+#define V_SOCKS_H
 
 // SOCKS Version
 #define SOCKS4              0x04
