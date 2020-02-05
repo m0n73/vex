@@ -9,10 +9,10 @@ another listener.
 ## Building vex
 ```bash
 # to make 
-[root@linux] mkdir build && make 
+[vex@linux]$ mkdir build && make 
 
 # to clean
-[root@linux] make clean
+[vex@linux]$ make clean
 ```
 
 ## Usage
@@ -54,9 +54,9 @@ Domain names are not supported when specifying the target address (via `-t`).
 
 ### Requesting BIND with a SOCKS4 proxy. 
 In this example `vex` will forward all communications from the bound SOCKS4
-proxy to another machine (like in the illustrated example above).
+proxy to another machine (like in the example above).
 ```
-[root@linux]$ ./vex -f socks4list.txt -l <another_machine_address>:9999  
+[vex@linux]$ ./vex -f socks4list.txt -l <another_machine_address>:9999  
 [*] Connecting to <proxy_address>:<proxy_port> ... Success.
 [*] SOCKS4 MSG: GRANTED (<bound_proxy_address>:<bound_proxy_port>)
 ```
@@ -71,7 +71,7 @@ established you will see something like this:
 In contrast to the previous examples, here `vex` will bind to a local port 
 (`-b`), rather than connecting to another machine.
 ```
-[root@linux]$ ./vex -f socks5list.txt -l localhost:9999 -t <target_address>:0 -5 -b
+[vex@linux]$ ./vex -f socks5list.txt -l localhost:9999 -t <target_address>:0 -5 -b
 [*] Connecting to <proxy_address>:<proxy_port> ... Success.
 [*] SOCKS5 MSG: SUCCESS (<bound_proxy_address>:<bound_proxy_port>)
 ```
