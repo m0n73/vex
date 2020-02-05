@@ -78,8 +78,10 @@ struct socks_list *parse_socks_list(const char *filepath)
          *port_it = NULL,
          *addr_it = NULL;
     size_t line_len = 0;
-    struct socks_list *head, *it = NULL, *temp;
-    FILE *socks_list;
+    struct socks_list *head=NULL, 
+                      *it = NULL, 
+                      *temp = NULL;
+    FILE *socks_list = NULL;
 
     if (!(socks_list = fopen(filepath, "r")))
     {

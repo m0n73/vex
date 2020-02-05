@@ -2,7 +2,7 @@ CC=gcc
 
 PROG=vex
 INCLUDE=include/
-CFLAGS=-Wall -Werror -I $(INCLUDE)
+CFLAGS=-O2 -D_FORTIFY_SOURCE=2 -Werror=implicit-function-declaration -Wall -Werror -fpie -Wl,-pie -I $(INCLUDE)
 
 VPATH=src/
 BUILD=build

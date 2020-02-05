@@ -168,6 +168,8 @@ fail:
 
 void free_proxy_config(struct proxy_config *pc)
 {
+    if (!pc) return;
+
     if (pc->loc_addr)
     {
         free(pc->loc_addr);

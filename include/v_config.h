@@ -18,9 +18,9 @@ struct target_config {
 struct socks_config {
     uint8_t socks_version;
     uint8_t no_methods;
-    uint8_t methods[MAX_METHODS];
     const char * userid;
     const char * passwd;
+    uint8_t methods[MAX_METHODS];
 };
 
 struct proxy_config {

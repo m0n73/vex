@@ -47,8 +47,33 @@ following format: `[ipv6]:port` (e.g. `[fe80::1337:2]:4201`).
 Domain names are not supported when specifying the target address (via `-t`).
 
 ## Examples
+
+### An illustrated SOCKS5 example.
+
+```
+                                                         |
+                         1.3.3.7:4201                    |
+ 1.2.3.4                       _                         | [vex@1.2.3.4]$ cat sockslist.txt 
+  ___   _                     |=| local                  | 4.3.2.1:1080
+ [(_)] |=|                    |_| listner                | 2.1.4.8:8078
+  '-`  |_|-,                   ^                         | 4.2.0.6:9420
+ /mmm/  ^  |                   |                         | [vex@1.2.3.4]$ ./vex -f sockslist.txt -l 1.3.3.7:4201 \
+  vex   |  '-------------------' _                       | > -5 -t 1.4.7.3:0 # target port is irrelevant
+         \                      |=| 4.3.2.1:56231        | [*] Connecting to 4.3.2.1:1080 ... Success.
+          \       4.3.2.1.:1080 |=|<------.  reverse     | [*] SOCKS5 MSG: SUCCESS (4.3.2.1:56231)
+           \_S_O_C_K_S_ _ _,--->|_|       | connection   | [*] SOCKS5 MSG: SUCCESS (1.4.7.3:62512)
+                   B I N D     SOCKS5     '~.            |                  ...
+                               server       |            | [vex@1.2.3.4]$ # The second SUCCESS message means 
+                                            `--._   ___  | [vex@1.2.3.4]$ # the target machine sucessfuly made 
+                                1.4.7.3:62512  |=| [(_)] | [vex@1.2.3.4]$ # a reverse connection The target must 
+                                               |_|  '-`  | [vex@1.2.3.4]$ # receive the connection info out-of-band.
+                                                   /mmm/ |
+                                                  target |
+```
+
 ### Requesting BIND with a SOCKS4 proxy. 
-In this example `vex` will connect to another machine and forward all communications there.
+In this example `vex` will forward all communications from the bound SOCKS4
+proxy to another machine (like in the illustrated example above).
 ```
 [root@linux]$ ./vex -f socks4list.txt -l <another_machine_address>:9999  
 [*] Connecting to <proxy_address>:<proxy_port> ... Success.
@@ -62,9 +87,10 @@ established you will see something like this:
 ```
 
 ### Requesting BIND with a SOCKS5 proxy. 
-In this example `vex` will bind to a local port (`-b`), rather than connecting somewhere.
+In contrast to the previous examples, here `vex` will bind to a local port 
+(`-b`), rather than connecting to another machine.
 ```
-[root@linux]$ ./vex -f socks5list.txt -l localhost:9999 -t <target_address>:2929 -5 -b
+[root@linux]$ ./vex -f socks5list.txt -l localhost:9999 -t <target_address>:0 -5 -b
 [*] Connecting to <proxy_address>:<proxy_port> ... Success.
 [*] SOCKS5 MSG: SUCCESS (<bound_proxy_address>:<bound_proxy_port>)
 ```
@@ -75,10 +101,8 @@ you will see something like this:
 [*] SOCKS5 MSG: SUCCESS (<target_address>:<incoming_port>)
 ```
 Note that SOCKS5 proxies often (if not always) requrire a legit target address in the BIND request.
-
-
 ## Notes
 This code is still in development stages -- use it at your own risk.
 
-**REMEMBER:** If you get caught doing retarded shit while using vex - 
-it's your responsibility. Please only use vex for legit purposes.
+**REMEMBER:** If you get caught doing retarded shit while using `vex` - 
+it's your responsibility. Please only use this software for legit purposes.
