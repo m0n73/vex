@@ -58,3 +58,36 @@ int toggle_sock_block(int sock, int blocking)
     }
     return 0;
 }
+
+int timeout_wait(int s, long tmout, int test_set)
+{
+    int ret;
+    fd_set conn_set;
+    struct timeval tv;
+
+    memset(&tv, '\0', sizeof(struct timeval));
+    FD_ZERO(&conn_set);
+    FD_SET(s, &conn_set);
+    tv.tv_sec = tmout;
+
+    switch (test_set)
+    {
+        case TM_READ:
+            ret = select(s+1, &conn_set, NULL, NULL, &tv);
+            break;
+        case TM_WRITE:
+            ret = select(s+1, NULL, &conn_set, NULL, &tv);
+            break;
+        case TM_ERROR:
+            ret = select(s+1, NULL, NULL, &conn_set, &tv);
+            break;
+        default:
+            fprintf(stderr, "[!] Invalid test set type\n");
+            return -1;
+    }
+
+    if (ret == -1)
+        fprintf(stderr, "select: %s\n", strerror(errno));
+
+    return ret;
+}

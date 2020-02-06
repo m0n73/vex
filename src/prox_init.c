@@ -48,7 +48,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
         return NULL;
     }
 
-    while ((opt = getopt(argc, argv, "5ahbxf:l:t:u:p:")) != -1)
+    while ((opt = getopt(argc, argv, "5ahbx:f:l:t:u:p:")) != -1)
     {
         switch (opt)
         {
@@ -71,7 +71,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
                 break;
             case 'x':
                 pc->tmout = strtol(optarg, NULL, 10);
-                if (pc->tmout == LONG_MIN || pc->tmout == LONG_MAX)
+                if (!pc->tmout || pc->tmout == LONG_MAX)
                 {
                     fprintf(stderr, 
                             "[!] Invalid timeout value - using default\n");

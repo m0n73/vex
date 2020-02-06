@@ -3,9 +3,7 @@
 static int attempt_connect(int s, const struct sockaddr *address, 
         socklen_t addrlen, long tmout)
 {
-    int ret = 0;
-    struct timeval tv;
-    fd_set conn_set;
+    int ret = 1;
 
     if (toggle_sock_block(s, 0) == -1) return -1;
 
@@ -14,24 +12,11 @@ static int attempt_connect(int s, const struct sockaddr *address,
         ret = -1;
         if (errno == EINPROGRESS)
         {
-            FD_ZERO(&conn_set);
-            FD_SET(s, &conn_set);
-            memset(&tv, '\0', sizeof(struct timeval));
-            tv.tv_sec = tmout;
-            ret = select(s+1, NULL, &conn_set, NULL, &tv);
-            switch(ret)
-            {
-                case -1:
-                    fprintf(stderr, "select: %s\n", strerror(errno));
-                    break;
-                case 0:
-                    printf("[-] Connection timed out (%ld s)\n",
-                            tmout);
-                    break;
-            }
+            ret = timeout_wait(s, tmout, TM_WRITE);
+
+            if (!ret)
+                printf("[-] Connection timed out (%ld s)\n", tmout);
         } 
-    } else {
-        ret = 1;
     }
 
     if (toggle_sock_block(s, 1) == -1) return -1;
