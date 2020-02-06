@@ -1,6 +1,45 @@
 #include <vex.h>
 
-int start_socket(const char *host, const char *port, int server)
+static int attempt_connect(int s, const struct sockaddr *address, 
+        socklen_t addrlen, long tmout)
+{
+    int ret = 0;
+    struct timeval tv;
+    fd_set conn_set;
+
+    if (toggle_sock_block(s, 0) == -1) return -1;
+
+    if (connect(s, address, addrlen) == -1)
+    {
+        ret = -1;
+        if (errno == EINPROGRESS)
+        {
+            FD_ZERO(&conn_set);
+            FD_SET(s, &conn_set);
+            memset(&tv, '\0', sizeof(struct timeval));
+            tv.tv_sec = tmout;
+            ret = select(s+1, NULL, &conn_set, NULL, &tv);
+            switch(ret)
+            {
+                case -1:
+                    fprintf(stderr, "select: %s\n", strerror(errno));
+                    break;
+                case 0:
+                    printf("[-] Connection timed out (%ld s)\n",
+                            tmout);
+                    break;
+            }
+        } 
+    } else {
+        ret = 1;
+    }
+
+    if (toggle_sock_block(s, 1) == -1) return -1;
+
+    return ret;
+}
+
+int start_socket(const char *host, const char *port, int server, long tmout)
 {
     int sock_fd, gay_error, yes = 1, errno_s;
     struct addrinfo h, *r = NULL, *it = NULL;
@@ -12,7 +51,7 @@ int start_socket(const char *host, const char *port, int server)
 
     if ((gay_error = getaddrinfo(host, port, &h, &r)))
     {
-        fprintf(stderr, "getaddrinfo: %s.\n", gai_strerror(gay_error));
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(gay_error));
         errno = EINVAL;
         return -1;
     }
@@ -31,7 +70,8 @@ int start_socket(const char *host, const char *port, int server)
                 continue;
             if (!bind(sock_fd, it->ai_addr, it->ai_addrlen)) break;
         } else {
-            if (!connect(sock_fd, it->ai_addr, it->ai_addrlen)) break;
+            if (attempt_connect(sock_fd, it->ai_addr, it->ai_addrlen, 
+                        tmout) == 1) break;
         }
         
         errno_s = errno;
@@ -65,13 +105,13 @@ void event_loop(struct proxy_config *pc)
     {
         if (listen(pc->listen_fd, 1) == -1)
         {
-            fprintf(stderr, "listen: %s.\n", strerror(errno));
+            fprintf(stderr, "listen: %s\n", strerror(errno));
             return;
         }
 
         if ((pc->client_fd = accept(pc->listen_fd, NULL, NULL)) == -1)
         {
-            fprintf(stderr, "accept: %s.\n", strerror(errno));
+            fprintf(stderr, "accept: %s\n", strerror(errno));
             return;
         }
     } else {
@@ -87,7 +127,7 @@ void event_loop(struct proxy_config *pc)
 
         if (select(max, &r_ready, NULL, NULL, NULL) == -1)
         {
-            fprintf(stderr, "select: %s.\n", strerror(errno));
+            fprintf(stderr, "select: %s\n", strerror(errno));
             return;
         }
 
@@ -97,13 +137,13 @@ void event_loop(struct proxy_config *pc)
         {
             if ((read_bytes = read(pc->client_fd, iobuff, IOBUFF_SZ)) == -1)
             {
-                fprintf(stderr, "read: %s.\n", strerror(errno));
+                fprintf(stderr, "read: %s\n", strerror(errno));
                 return;
             }
 
             if (!read_bytes) 
             {
-                printf("[-] EOF from the local listener.\n");
+                printf("[-] EOF from the local listener\n");
                 return; 
             }
 
@@ -116,13 +156,13 @@ void event_loop(struct proxy_config *pc)
         {
             if ((read_bytes = read(pc->socks_fd, iobuff, IOBUFF_SZ)) == -1)
             {
-                fprintf(stderr, "read: %s.\n", strerror(errno));
+                fprintf(stderr, "read: %s\n", strerror(errno));
                 return;
             }
 
             if (!read_bytes) 
             {
-                printf("[-] EOF from the proxy.\n");
+                printf("[-] EOF from the proxy\n");
                 return;
             }
 

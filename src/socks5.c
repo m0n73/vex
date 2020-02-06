@@ -22,10 +22,10 @@ static int socks5_auth_userpass(struct proxy_config *pc)
     
     if (canvas[1] == 0x00) 
     {
-        printf("[+] Username/Password authentication sucessful.\n");
+        printf("[+] Username/Password authentication sucessful\n");
         return 0;
     } else {
-        fprintf(stderr, "[-] Username/Password authentication failed.\n");
+        fprintf(stderr, "[-] Username/Password authentication failed\n");
         return -1;
     }
 }
@@ -53,10 +53,10 @@ static int socks5_negotiate_auth(struct proxy_config *pc)
         case USERPASS:
             return socks5_auth_userpass(pc);
         case NO_METHODS:
-            fprintf(stderr, "[-] No acceptable methods.\n");
+            fprintf(stderr, "[-] No acceptable methods\n");
             return -1;
         default:
-            fprintf(stderr, "[-] Method 0x%02hhx is not implemented.\n",
+            fprintf(stderr, "[-] Method 0x%02hhx is not implemented\n",
                     *(canvas+1));
             return -1;
     }
@@ -87,7 +87,7 @@ static uint8_t socks5_recv_msg(struct proxy_config *pc)
             break;
         default:
             fprintf(stderr, 
-                    "socks5_attempt: Proxy sent an unknown address type.\n"); 
+                    "socks5_attempt: Proxy sent an unknown address type\n"); 
             return 0xff;
     }
 
@@ -102,26 +102,26 @@ static uint8_t socks5_recv_msg(struct proxy_config *pc)
         case IP_ADDRESS:
             if (!inet_ntop(AF_INET, (void *) addr, addr_str, INET6_ADDRSTRLEN))
             {
-                fprintf(stderr, "inet_ntop: %s.\n", strerror(errno));
+                fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
                 break;
             }
             break;
         case IP6_ADDRESS:
             if (!inet_ntop(AF_INET6, (void *) addr, addr_str, INET6_ADDRSTRLEN))
             {
-                fprintf(stderr, "inet_ntop: %s.\n", strerror(errno));
+                fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
                 break;
             }
             break;
         default:
             fprintf(stderr, 
-                    "socks5_attempt: Proxy sent an unknown address type.\n"); 
+                    "socks5_attempt: Proxy sent an unknown address type\n"); 
             return 0xff;
     }
 
     if (msg.code == SUCCESS)
     {
-        printf("[*] SOCKS5 MSG: SUCCESS (%s:%d)\n", addr_str, ntohs(port));
+        printf("[+] SOCKS5 MSG: SUCCESS (%s:%d)\n", addr_str, ntohs(port));
         fflush(stdout);
     }
 
@@ -153,7 +153,7 @@ int socks5_attempt(struct proxy_config *pc)
             canvas_size = SOCKS5_IP6_REQ_BUFFER;
             break;
         default:
-            fprintf(stderr, "socks5_attempt: Unknown address type.\n");
+            fprintf(stderr, "socks5_attempt: Unknown address type\n");
             return -1;
     }
 
@@ -170,31 +170,31 @@ int socks5_attempt(struct proxy_config *pc)
     switch(reply_code)
     {
         case SOCKS_FAIL:
-            fprintf(stderr, "[!] General SOCKS server failure.\n");
+            fprintf(stderr, "[-] SOCKS5 ERR: General SOCKS server failure\n");
             break;
         case NOT_ALLOWED:
-            fprintf(stderr, "[!] Connection not allowed.\n");
+            fprintf(stderr, "[-] SOCKS5 ERR: Connection not allowed\n");
             break;
         case NET_UNREACHABLE:
-            fprintf(stderr, "[!] Network unreachable.\n");
+            fprintf(stderr, "[-] SOCKS5 ERR: Network unreachable\n");
             break;
         case HOST_UNREACHABLE:
-            fprintf(stderr, "[!] Target unreachable.\n");
+            fprintf(stderr, "[-] SOCKS5 ERR: Target unreachable\n");
             break;
         case REFUSED:
-            fprintf(stderr, "[!] Connection refused.\n");
+            fprintf(stderr, "[-] SOCKS5 ERR: Connection refused\n");
             break;
         case TTL_EXPIRE:
-            fprintf(stderr, "[!] TTL expired.\n");
+            fprintf(stderr, "[-] SOCKS5 ERR: TTL expired\n");
             break;
         case CMD_NOT_SUPPORTED:
-            fprintf(stderr, "[!] Command not supported.\n");
+            fprintf(stderr, "[-] SOCKS5 ERR: Command not supported\n");
             break;
         case ADDR_NOT_SUPPORTED:
-            fprintf(stderr, "[!] Address type not supported.\n");
+            fprintf(stderr, "[-] SOCKS5 ERR: Address type not supported\n");
             break;
         default:
-            fprintf(stderr, "[!] socks5_recv_msg failed.\n");
+            fprintf(stderr, "[-] socks5_recv_msg failed\n");
             break; 
     }
     return -1;

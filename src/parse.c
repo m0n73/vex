@@ -16,7 +16,7 @@ uint8_t parse_string_addr(const char *ip_port, char **ip, char **port)
 
     if (!(addr = strndup(ip_port, MAX_ADDR_PORT)))
     {
-        fprintf(stderr, "strndup: %s.\n", strerror(errno));
+        fprintf(stderr, "strndup: %s\n", strerror(errno));
         return 0;
     }
 
@@ -24,7 +24,7 @@ uint8_t parse_string_addr(const char *ip_port, char **ip, char **port)
 
     if (!tmp)
     {
-        fprintf(stderr, "parse_string_addr: invalid address format.\n");
+        fprintf(stderr, "parse_string_addr: invalid address format\n");
         goto fail;
     }
 
@@ -34,13 +34,13 @@ uint8_t parse_string_addr(const char *ip_port, char **ip, char **port)
 
     if (!(*port = strndup(tmp, MAX_PORT)))
     {
-        fprintf(stderr, "strndup: %s.\n", strerror(errno));
+        fprintf(stderr, "strndup: %s\n", strerror(errno));
         goto fail;
     }
     
     if (!(*ip = strndup(addr, INET6_ADDRSTRLEN)))
     {
-        fprintf(stderr, "strndup: %s.\n", strerror(errno));
+        fprintf(stderr, "strndup: %s\n", strerror(errno));
         goto fail;
     }
 
@@ -85,7 +85,7 @@ struct socks_list *parse_socks_list(const char *filepath)
 
     if (!(socks_list = fopen(filepath, "r")))
     {
-        fprintf(stderr, "fopen: %s.\n", strerror(errno));
+        fprintf(stderr, "fopen: %s\n", strerror(errno));
         return NULL;
     }
 
@@ -97,7 +97,7 @@ struct socks_list *parse_socks_list(const char *filepath)
         if (!(temp  = (struct socks_list *) 
                     calloc(1, sizeof(struct socks_list))))
         {
-            fprintf(stderr, "calloc failed: %s.\n", strerror(errno));
+            fprintf(stderr, "calloc failed: %s\n", strerror(errno));
             free_socks_list(head);
             fclose(socks_list);
             return NULL;

@@ -1,17 +1,5 @@
 #include <vex.h>
 
-/* Request
- * VER | CMD | DSTPORT | DESTIP | ID
- *  1  |  1  |    2    |    4   | Var
- * -----------------------------------
- */
-
-/* Reply
- *  VN | REP | DSTPORT | DESTIP 
- *  1  |  1  |    2    |    4   
- * -----------------------------
- */
-
 int socks4_attempt(struct proxy_config *pc)
 {
     uint8_t canvas[SOCKS4_REQ_BUFFER];
@@ -35,7 +23,7 @@ int socks4_attempt(struct proxy_config *pc)
 
     if (msg.code == GRANTED)
     {
-        printf("[*] SOCKS4 MSG: GRANTED (%s:%d)\n", inet_ntoa(msg.addr), 
+        printf("[+] SOCKS4 MSG: GRANTED (%s:%d)\n", inet_ntoa(msg.addr), 
                 ntohs(msg.port));
 
         if (read_a(pc->socks_fd, &msg, sizeof(struct socks4_msg)) == -1)
@@ -43,7 +31,7 @@ int socks4_attempt(struct proxy_config *pc)
 
         if (msg.code == GRANTED)
         {
-            printf("[*] SOCKS4 MSG: GRANTED (%s:%d)\n",
+            printf("[+] SOCKS4 MSG: GRANTED (%s:%d)\n",
                 inet_ntoa(msg.addr), ntohs(msg.port));
             fflush(stdout);
             return 0;
@@ -53,16 +41,18 @@ int socks4_attempt(struct proxy_config *pc)
     switch(msg.code)
     {
         case REJECTED:
-            fprintf(stderr, "[!] Proxy rejected request.\n");
+            fprintf(stderr, "[-] SOCKS4 ERR: Proxy rejected request\n");
             break;
         case UNREACHABLE:
-            fprintf(stderr, "[!] Proxy couldn't reach us (is ident on?).\n");
+            fprintf(stderr, "[-] SOCKS4 ERR: Proxy couldn't reach us\n");
+            fprintf(stderr, "[!] Look for a proxy that doesn't check ident\n");
             break;
         case IDENT_FAIL:
-            fprintf(stderr, "[!] Ident conversation failed.\n");
+            fprintf(stderr, "[-] SOCKS4 ERR: Ident conversation failed\n");
+            fprintf(stderr, "[!] Look for a proxy that doesn't check ident\n");
             break;
         default:
-            fprintf(stderr, "[!] Unknown reply code.\n");
+            fprintf(stderr, "[-] SOCKS4 ERR: Unknown reply code\n");
             break;
     }
     return -1;

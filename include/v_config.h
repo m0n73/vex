@@ -3,6 +3,12 @@
 
 #define MAX_METHODS         0xff
 
+#define DEFAULT_TMOUT       20
+#define DEFAULT_USER        "anonymous"
+#define DEFAULT_PASS        "pass"
+#define DEFAULT_TADDR       "255.255.255.255"
+#define DEFAULT_TPORT       "0"
+
 struct socks_list {
     char *addr;
     char *port;
@@ -33,6 +39,7 @@ struct proxy_config {
     int listen_fd;
     int client_fd;
     int bind_local;
+    long tmout;
 };
 
 #endif

@@ -10,7 +10,7 @@ int read_a(int s, void *src, size_t len)
         if ((rlen = read(s, src+total, left)) == -1)
         {
             if (errno == EAGAIN || errno == EWOULDBLOCK) return -1;
-            fprintf(stderr, "read: %s.\n", strerror(errno));
+            fprintf(stderr, "read: %s\n", strerror(errno));
             return -1;
         }
         left -= rlen;
@@ -29,7 +29,7 @@ int write_a(int s, void *dst, size_t len)
         if ((wlen = write(s, dst+total, left)) == -1)
         {
             if (errno == EAGAIN || errno == EWOULDBLOCK) return -1;
-            fprintf(stderr, "write: %s.\n", strerror(errno));
+            fprintf(stderr, "write: %s\n", strerror(errno));
             return -1;
         }
         left -= wlen;
@@ -44,16 +44,16 @@ int toggle_sock_block(int sock, int blocking)
 
     if ((flags = fcntl(sock, F_GETFL, 0)) == -1)
     {
-        fprintf(stderr, "fcntl: %s.\n", strerror(errno));
+        fprintf(stderr, "fcntl: %s\n", strerror(errno));
         return -1;
     }
 
-    if (blocking) flags |= ~O_NONBLOCK;
+    if (blocking) flags &= ~O_NONBLOCK;
     else flags |= O_NONBLOCK;
 
     if ((flags = fcntl(sock, F_SETFL, flags)) == -1)
     {
-        fprintf(stderr, "fcntl: %s.\n", strerror(errno));
+        fprintf(stderr, "fcntl: %s\n", strerror(errno));
         return -1;
     }
     return 0;
