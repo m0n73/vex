@@ -20,24 +20,20 @@ another listener.
 ./vex < -f proxy_list > < -l addr:port > [ -t addr:port ] [ -u username ] [ -p password ] [ -5 ] [ -a ] [ -b ] [ -h ]
 
 GENERAL OPTIONS:
-  -f	proxy_list	Path to the proxy list. Must be in
-			address:port format, one per line.
-  -l	addr:port	Local address and port the proxy
-			will connect to. With the -b option,
-			the proxy will instead bind to this
-			address.
-  -t	addr:port	Address of the target machine. Defaults
-			to the broadcast address and port 0.
-  -u	username	Specify a username for SOCKS5 authentication,
-			or for the SOCKS4 userid field.
-  -b			Instead of connecting to the local address
-			bind and listen at that address.
-  -h			Display this message.
+  -f	proxy_list	Path to the proxy list (must be in
+			address:port format, one per line)
+  -l	addr:port	Local address and port
+  -t	addr:port	Target address [default: "255.255.255.255:0"]
+  -u	username	Username for SOCKS5 authentication, or for
+			the SOCKS4 userid field [default: "anonymous"]
+  -b			Bind at the local address, instead of connecting
+  -x			Connection timeout [default: 20]
+  -h			Display this message
 
 SOCKS5 OPTIONS:
-  -5			Use SOCKS5 protocol (SOCKS4 is the default).
-  -a			Use User/Pass Authentication.
-  -p	password	Specify a password for SOCKS5 authentication.
+  -5			Use SOCKS5 [default: SOCKS4]
+  -a			Add User/Pass Authentication
+  -p	password	Password for '-a'  [default: "pass"]
 ```
 
 `vex` expects a proxy-list text file. This file should contain addresses in
