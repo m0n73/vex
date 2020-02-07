@@ -100,7 +100,7 @@ static uint8_t socks5_recv_msg(struct proxy_config *pc)
     switch(msg.atyp)
     {
         case IP_ADDRESS:
-            if (!inet_ntop(AF_INET, (void *) addr, addr_str, INET6_ADDRSTRLEN))
+            if (!inet_ntop(AF_INET, (void *) addr, addr_str, INET_ADDRSTRLEN))
             {
                 fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
                 break;

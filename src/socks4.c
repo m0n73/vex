@@ -2,12 +2,14 @@
 
 int socks4_attempt(struct proxy_config *pc)
 {
+    char addr_str[INET_ADDRSTRLEN];
     uint8_t canvas[SOCKS4_REQ_BUFFER];
     size_t ulen = strnlen(pc->socks_conf->userid, MAX_USERID-1);
     struct socks4_msg msg;
 
     memset(&msg, '\0', sizeof(struct socks4_msg));
     memset(canvas, '\0', SOCKS4_REQ_BUFFER);
+    memset(addr_str, '\0', INET_ADDRSTRLEN);
 
     *(canvas) = SOCKS4;
     *(canvas+1) = BIND;
@@ -23,16 +25,30 @@ int socks4_attempt(struct proxy_config *pc)
 
     if (msg.code == GRANTED)
     {
-        printf("[+] SOCKS4 MSG: GRANTED (%s:%d)\n", inet_ntoa(msg.addr), 
-                ntohs(msg.port));
+        if (!inet_ntop(AF_INET, (void *) &msg.addr, 
+                    addr_str, INET_ADDRSTRLEN))
+        {
+            fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
+            return -1;
+        }
+
+        printf("[+] SOCKS4 MSG: GRANTED (%s:%d)\n", 
+                addr_str, ntohs(msg.port));
 
         if (read_a(pc->socks_fd, &msg, sizeof(struct socks4_msg)) == -1)
             return -1;
 
         if (msg.code == GRANTED)
         {
+            if (!inet_ntop(AF_INET, (void *) &msg.addr,
+                        addr_str, INET_ADDRSTRLEN))
+            {
+                fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
+                return -1;
+            }
+
             printf("[+] SOCKS4 MSG: GRANTED (%s:%d)\n",
-                inet_ntoa(msg.addr), ntohs(msg.port));
+                addr_str, ntohs(msg.port));
             fflush(stdout);
             return 0;
         } 

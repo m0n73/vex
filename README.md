@@ -17,23 +17,25 @@ another listener.
 
 ## Usage
 ```
-./vex < -f proxy_list > < -l addr:port > [ -t addr:port ] [ -u username ] [ -p password ] [ -5 ] [ -a ] [ -b ] [ -h ]
+./vex <-f proxy_list> <-l addr:port> [options]
 
-GENERAL OPTIONS:
+REQUIRED:
   -f	proxy_list	Path to the proxy list (must be in
 			address:port format, one per line)
   -l	addr:port	Local address and port
+
+GENERAL OPTIONS:
   -t	addr:port	Target address [default: "255.255.255.255:0"]
   -u	username	Username for SOCKS5 authentication, or for
 			the SOCKS4 userid field [default: "anonymous"]
   -b			Bind at the local address, instead of connecting
-  -x			Connection timeout [default: 20]
+  -x	timeout		Connection timeout [default: 20]
   -h			Display this message
 
 SOCKS5 OPTIONS:
   -5			Use SOCKS5 [default: SOCKS4]
   -a			Add User/Pass Authentication
-  -p	password	Password for '-a'  [default: "pass"]
+  -p	password	Password for '-a' [default: "pass"]
 ```
 
 `vex` expects a proxy-list text file. This file should contain addresses in

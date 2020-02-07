@@ -2,12 +2,12 @@
 
 void usage(const char *name) 
 {
-    fprintf(stderr, "%s < -f proxy_list > < -l addr:port > [ -t addr:port ] [ -u username ] [ -p password ] [ -5 ] [ -a ] [ -b ] [ -h ]\n\n",
-            name);
-    fprintf(stderr, "GENERAL OPTIONS:\n");
+    fprintf(stderr, "%s <-f proxy_list> <-l addr:port> [options]\n", name);
+    fprintf(stderr, "\nREQUIRED:\n");
     fprintf(stderr, "  -f\tproxy_list\tPath to the proxy list (must be in\n");
     fprintf(stderr, "\t\t\taddress:port format, one per line)\n");
     fprintf(stderr, "  -l\taddr:port\tLocal address and port\n");
+    fprintf(stderr, "\nGENERAL OPTIONS:\n");
     fprintf(stderr, 
             "  -t\taddr:port\tTarget address [default: \"%s:%s\"]\n", 
             DEFAULT_TADDR, DEFAULT_TPORT);
@@ -18,14 +18,14 @@ void usage(const char *name)
             DEFAULT_USER);
     fprintf(stderr, 
             "  -b\t\t\tBind at the local address, instead of connecting\n");
-    fprintf(stderr, "  -x\t\t\tConnection timeout [default: %d]\n", 
+    fprintf(stderr, "  -x\ttimeout\t\tConnection timeout [default: %d]\n", 
             DEFAULT_TMOUT);
     fprintf(stderr, "  -h\t\t\tDisplay this message\n");
     fprintf(stderr, "\nSOCKS5 OPTIONS:\n");
     fprintf(stderr, "  -5\t\t\tUse SOCKS5 [default: SOCKS4]\n");
     fprintf(stderr, "  -a\t\t\tAdd User/Pass Authentication\n");
     fprintf(stderr, 
-            "  -p\tpassword\tPassword for \'-a\'  [default: \"%s\"]\n", 
+            "  -p\tpassword\tPassword for \'-a\' [default: \"%s\"]\n", 
             DEFAULT_PASS);
     exit(EXIT_FAILURE);
 }

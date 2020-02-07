@@ -3,7 +3,9 @@
 static int attempt_connect(int s, const struct sockaddr *address, 
         socklen_t addrlen, long tmout)
 {
-    int ret = 1;
+    int ret = 1, 
+        err = 0;
+    socklen_t len = sizeof(int);
 
     if (toggle_sock_block(s, 0) == -1) return -1;
 
@@ -17,6 +19,18 @@ static int attempt_connect(int s, const struct sockaddr *address,
             if (!ret)
                 printf("[-] Connection timed out (%ld s)\n", tmout);
         } 
+    }
+
+    if (getsockopt(s, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
+    {
+        fprintf(stderr, "getsockopt: %s\n", strerror(err));
+        return -1;
+    }
+
+    if (err)
+    {
+        printf("[-] Connection failed: %s\n", strerror(err));
+        ret = -1;
     }
 
     if (toggle_sock_block(s, 1) == -1) return -1;
