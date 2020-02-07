@@ -55,7 +55,8 @@ In this example `vex` will forward all communications from the bound SOCKS4
 proxy to another machine (like in the example above).
 ```
 [vex@linux]$ ./vex -f socks4list.txt -l <another_machine_address>:9999  
-[*] Connecting to <proxy_address>:<proxy_port> ... Success.
+[*] Trying the proxy at <proxy_address>:<proxy_port> 
+[+] Connected to <proxy_address>:<proxy_port> 
 [*] SOCKS4 MSG: GRANTED (<bound_proxy_address>:<bound_proxy_port>)
 ```
 At this point the reverse connection can be initated to the proxy and will
@@ -70,8 +71,9 @@ In contrast to the previous examples, here `vex` will bind to a local port
 (`-b`), rather than connecting to another machine.
 ```
 [vex@linux]$ ./vex -f socks5list.txt -l localhost:9999 -t <target_address>:0 -5 -b
-[*] Connecting to <proxy_address>:<proxy_port> ... Success.
-[*] SOCKS5 MSG: SUCCESS (<bound_proxy_address>:<bound_proxy_port>)
+[*] Trying the proxy at <proxy_address>:<proxy_port> 
+[+] Connected to <proxy_address>:<proxy_port> 
+[+] SOCKS5 MSG: SUCCESS (<bound_proxy_address>:<bound_proxy_port>)
 ```
 At this point the reverse connection can be initated to the proxy and will
 be forwarded via `localhost:9999`. When the reverse connection is established 
