@@ -128,7 +128,7 @@ void event_loop(struct proxy_config *pc)
         if (select(max, &r_ready, NULL, NULL, NULL) == -1)
         {
             fprintf(stderr, "select: %s\n", strerror(errno));
-            return;
+            goto exit_loop;
         }
 
         memset(iobuff, 0, IOBUFF_SZ);
@@ -138,16 +138,17 @@ void event_loop(struct proxy_config *pc)
             if ((read_bytes = read(pc->client_fd, iobuff, IOBUFF_SZ)) == -1)
             {
                 fprintf(stderr, "read: %s\n", strerror(errno));
-                return;
+                goto exit_loop;
             }
 
             if (!read_bytes) 
             {
                 printf("[-] EOF from the local listener\n");
-                return; 
+                goto exit_loop;
             }
 
-            if (write_a(pc->socks_fd, iobuff, read_bytes) == -1) return;
+            if (write_a(pc->socks_fd, iobuff, read_bytes) == -1) 
+                goto exit_loop;
         }
 
         memset(iobuff, 0, IOBUFF_SZ);
@@ -157,16 +158,21 @@ void event_loop(struct proxy_config *pc)
             if ((read_bytes = read(pc->socks_fd, iobuff, IOBUFF_SZ)) == -1)
             {
                 fprintf(stderr, "read: %s\n", strerror(errno));
-                return;
+                goto exit_loop;
             }
 
             if (!read_bytes) 
             {
                 printf("[-] EOF from the proxy\n");
-                return;
+                goto exit_loop;
             }
 
-            if (write_a(pc->client_fd, iobuff, read_bytes) == -1) return;
+            if (write_a(pc->client_fd, iobuff, read_bytes) == -1) 
+                goto exit_loop;
         }
     }
+exit_loop:
+    close(pc->client_fd);
+    close(pc->socks_fd);
+    return;
 }

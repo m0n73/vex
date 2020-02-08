@@ -13,6 +13,14 @@ int read_a(int s, void *src, size_t len)
             fprintf(stderr, "read: %s\n", strerror(errno));
             return -1;
         }
+
+        if (!rlen)
+        {
+            fprintf(stderr, "read_a: received EOF.\n");
+            errno = EPIPE;
+            return -1;
+        }
+
         left -= rlen;
         total += rlen;
     }

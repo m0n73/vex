@@ -57,13 +57,13 @@ proxy to another machine (like in the example above).
 [vex@linux]$ ./vex -f socks4list.txt -l <another_machine_address>:9999  
 [*] Trying the proxy at <proxy_address>:<proxy_port> 
 [+] Connected to <proxy_address>:<proxy_port> 
-[*] SOCKS4 MSG: GRANTED (<bound_proxy_address>:<bound_proxy_port>)
+[+] SOCKS4 MSG: GRANTED (<bound_proxy_address>:<bound_proxy_port>)
 ```
 At this point the reverse connection can be initated to the proxy and will
 be forwarded to `<another_machine_address>:9999`. When the reverse connection is
 established you will see something like this:
 ```
-[*] SOCKS4 MSG: GRANTED (<incoming_address>:<incoming_port>)
+[+] SOCKS4 MSG: GRANTED (<incoming_address>:<incoming_port>)
 ```
 
 ### Requesting BIND with a SOCKS5 proxy. 
@@ -79,7 +79,7 @@ At this point the reverse connection can be initated to the proxy and will
 be forwarded via `localhost:9999`. When the reverse connection is established 
 you will see something like this:
 ```
-[*] SOCKS5 MSG: SUCCESS (<target_address>:<incoming_port>)
+[+] SOCKS5 MSG: SUCCESS (<target_address>:<incoming_port>)
 ```
 Note that SOCKS5 proxies often (if not always) requrire a legit target address in the BIND request.
 ## Notes
