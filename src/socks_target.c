@@ -29,7 +29,7 @@ static void *make_addr(uint8_t addr_type, const char * addr)
 
     if (af == AF_INET)
     {
-        if (!(ret  = calloc(1, sizeof(in_addr_t))))
+        if (!(ret  = checked_calloc(1, sizeof(in_addr_t))))
         {
             fprintf(stderr, "calloc: %s\n", strerror(errno));
             return NULL;
@@ -39,7 +39,7 @@ static void *make_addr(uint8_t addr_type, const char * addr)
 
     if (af == AF_INET6)
     {
-        if (!(ret = calloc(16, sizeof(unsigned char))))
+        if (!(ret = checked_calloc(16, sizeof(unsigned char))))
         {
             fprintf(stderr, "calloc: %s\n", strerror(errno));
             return NULL;
@@ -69,7 +69,8 @@ init_target(uint8_t type, const char *addr, const char *port_str)
     }
 
     if (!(tc = 
-            (struct target_config *) calloc(1, sizeof(struct target_config))))
+            (struct target_config *) 
+            checked_calloc(1, sizeof(struct target_config))))
     {
         fprintf(stderr, "calloc: %s\n", strerror(errno));
         return NULL;

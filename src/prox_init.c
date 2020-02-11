@@ -42,7 +42,8 @@ struct proxy_config *init_proxy(int argc, char **argv)
          *targ_port = NULL;
     struct proxy_config *pc = NULL;
     
-    if (!(pc = (struct proxy_config *) calloc(1, sizeof(struct proxy_config))))
+    if (!(pc = (struct proxy_config *) 
+                checked_calloc(1, sizeof(struct proxy_config))))
     {
         fprintf(stderr, "calloc: %s\n", strerror(errno));
         return NULL;

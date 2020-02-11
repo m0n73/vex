@@ -99,3 +99,32 @@ int timeout_wait(int s, long tmout, int test_set)
 
     return ret;
 }
+
+void strip_trail(char *str, size_t len)
+{
+    size_t i = 0;
+
+    for (; i < len; i++)
+    {
+        if (!str[i]) return;
+        if (isspace(str[i])) 
+        {
+            str[i] = '\0';
+            return;
+        }
+    }
+    return;
+}
+
+void *checked_calloc(size_t nmemb, size_t size)
+{
+    size_t test;
+
+    test = nmemb * size;
+
+    if (test)
+        if (size/test == nmemb)
+            return calloc(nmemb, size);
+    errno = ERANGE;
+    return NULL;
+}

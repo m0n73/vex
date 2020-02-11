@@ -44,6 +44,8 @@ uint8_t parse_string_addr(const char *ip_port, char **ip, char **port)
         goto fail;
     }
 
+    strip_trail(*port, MAX_PORT);
+
     if (addr)
     {
         free(addr);
@@ -95,7 +97,7 @@ struct socks_list *parse_socks_list(const char *filepath)
         line_it[strcspn(line_it, "\r\n")] = '\0';
         if (!parse_string_addr(line_it, &addr_it, &port_it)) goto cont;
         if (!(temp  = (struct socks_list *) 
-                    calloc(1, sizeof(struct socks_list))))
+                    checked_calloc(1, sizeof(struct socks_list))))
         {
             fprintf(stderr, "calloc failed: %s\n", strerror(errno));
             free_socks_list(head);
