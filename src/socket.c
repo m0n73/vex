@@ -17,18 +17,18 @@ static int attempt_connect(int s, const struct sockaddr *address,
             ret = timeout_wait(s, tmout, TM_WRITE);
 
             if (!ret)
-                printf("[-] Connection timed out (%ld s)\n", tmout);
+                LOGUSR("[-] Connection timed out (%ld s)\n", tmout);
         } 
 
         if (getsockopt(s, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
         {
-            fprintf(stderr, "getsockopt: %s\n", strerror(err));
+            LOGERR("getsockopt: %s\n", strerror(err));
             return -1;
         }
     
         if (err)
         {
-            printf("[-] Connection failed: %s\n", strerror(err));
+            LOGUSR("[-] Connection failed: %s\n", strerror(err));
             ret = -1;
         }
 
@@ -51,7 +51,7 @@ int start_socket(const char *host, const char *port, int server, long tmout)
 
     if ((gay_error = getaddrinfo(host, port, &h, &r)))
     {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(gay_error));
+        LOGERR("getaddrinfo: %s\n", gai_strerror(gay_error));
         errno = EINVAL;
         return -1;
     }
@@ -105,13 +105,13 @@ void event_loop(struct proxy_config *pc)
     {
         if (listen(pc->listen_fd, 1) == -1)
         {
-            fprintf(stderr, "listen: %s\n", strerror(errno));
+            LOGERR("listen: %s\n", strerror(errno));
             return;
         }
 
         if ((pc->client_fd = accept(pc->listen_fd, NULL, NULL)) == -1)
         {
-            fprintf(stderr, "accept: %s\n", strerror(errno));
+            LOGERR("accept: %s\n", strerror(errno));
             return;
         }
     } else {
@@ -130,7 +130,7 @@ void event_loop(struct proxy_config *pc)
 
         if (select(max, &r_ready, NULL, NULL, NULL) == -1)
         {
-            fprintf(stderr, "select: %s\n", strerror(errno));
+            LOGERR("select: %s\n", strerror(errno));
             goto exit_loop;
         }
 
@@ -142,17 +142,17 @@ void event_loop(struct proxy_config *pc)
             {
                 if (errno != EAGAIN && errno != EWOULDBLOCK)
                 {
-                    fprintf(stderr, "read: %s\n", strerror(errno));
+                    LOGERR("read: %s\n", strerror(errno));
                     goto exit_loop;
                 }
             } else {
                 if (!read_bytes) 
                 {
-                    printf("[-] EOF from the local listener\n");
+                    LOGUSR("[-] EOF from the local connection\n");
                     goto exit_loop;
                 }
 
-                if (write_a(pc->socks_fd, iobuff, read_bytes) == -1) 
+                if (write_a(pc->socks_fd, iobuff, (size_t *) &read_bytes) == -1) 
                 {
                     if (errno != EAGAIN && errno != EWOULDBLOCK)
                         goto exit_loop;
@@ -168,18 +168,18 @@ void event_loop(struct proxy_config *pc)
             {
                 if (errno != EAGAIN && errno != EWOULDBLOCK)
                 {
-                    fprintf(stderr, "read: %s\n", strerror(errno));
+                    LOGERR("read: %s\n", strerror(errno));
                     goto exit_loop;
                 }
             } else {
 
                 if (!read_bytes) 
                 {
-                    printf("[-] EOF from the proxy\n");
+                    LOGUSR("[-] EOF from the proxy\n");
                     goto exit_loop;
                 }
 
-                if (write_a(pc->client_fd, iobuff, read_bytes) == -1) 
+                if (write_a(pc->client_fd, iobuff, (size_t *) &read_bytes) == -1) 
                 {
                     if (errno != EAGAIN && errno != EWOULDBLOCK)
                         goto exit_loop;

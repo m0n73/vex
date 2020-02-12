@@ -4,7 +4,7 @@ int socks4_attempt(struct proxy_config *pc)
 {
     char addr_str[INET_ADDRSTRLEN];
     uint8_t canvas[SOCKS4_REQ_BUFFER];
-    size_t ulen = strnlen(pc->socks_conf->userid, MAX_USERID-1);
+    size_t io_len, ulen = strnlen(pc->socks_conf->userid, MAX_USERID-1);
     struct socks4_msg msg;
 
     memset(&msg, '\0', sizeof(struct socks4_msg));
@@ -17,10 +17,14 @@ int socks4_attempt(struct proxy_config *pc)
     memcpy(canvas+4, pc->target->address, sizeof(struct in_addr));
     memcpy(canvas+8, pc->socks_conf->userid, ulen*(sizeof(uint8_t)));
 
-    if (write_a(pc->socks_fd, canvas, (9+ulen)*(sizeof(uint8_t))) == -1)
+    io_len = (9+ulen)*(sizeof(uint8_t));
+
+    if (write_a(pc->socks_fd, canvas, &io_len) == -1)
         return -1;
 
-    if (read_a(pc->socks_fd, &msg, sizeof(struct socks4_msg)) == -1)
+    io_len = sizeof(struct socks4_msg);
+
+    if (read_a(pc->socks_fd, &msg, &io_len) == -1)
         return -1;
 
     if (msg.code == GRANTED)
@@ -28,14 +32,16 @@ int socks4_attempt(struct proxy_config *pc)
         if (!inet_ntop(AF_INET, (void *) &msg.addr, 
                     addr_str, INET_ADDRSTRLEN))
         {
-            fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
+            LOGERR("inet_ntop: %s\n", strerror(errno));
             return -1;
         }
 
-        printf("[+] SOCKS4 MSG: GRANTED (%s:%d)\n", 
+        LOGUSR("[+] SOCKS4 MSG: GRANTED (%s:%d)\n", 
                 addr_str, ntohs(msg.port));
 
-        if (read_a(pc->socks_fd, &msg, sizeof(struct socks4_msg)) == -1)
+        io_len = sizeof(struct socks4_msg);
+
+        if (read_a(pc->socks_fd, &msg, &io_len) == -1)
             return -1;
 
         if (msg.code == GRANTED)
@@ -43,11 +49,11 @@ int socks4_attempt(struct proxy_config *pc)
             if (!inet_ntop(AF_INET, (void *) &msg.addr,
                         addr_str, INET_ADDRSTRLEN))
             {
-                fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
+                LOGERR("inet_ntop: %s\n", strerror(errno));
                 return -1;
             }
 
-            printf("[+] SOCKS4 MSG: GRANTED (%s:%d)\n",
+            LOGUSR("[+] SOCKS4 MSG: GRANTED (%s:%d)\n",
                 addr_str, ntohs(msg.port));
             fflush(stdout);
             return 0;
@@ -57,18 +63,16 @@ int socks4_attempt(struct proxy_config *pc)
     switch(msg.code)
     {
         case REJECTED:
-            fprintf(stderr, "[-] SOCKS4 ERR: Proxy rejected request\n");
+            LOGERR("[-] SOCKS4 ERR: Proxy rejected request\n");
             break;
         case UNREACHABLE:
-            fprintf(stderr, "[-] SOCKS4 ERR: Proxy couldn't reach us\n");
-            fprintf(stderr, "[!] Look for a proxy that doesn't check ident\n");
+            LOGERR("[-] SOCKS4 ERR: Proxy couldn't reach us\n");
             break;
         case IDENT_FAIL:
-            fprintf(stderr, "[-] SOCKS4 ERR: Ident conversation failed\n");
-            fprintf(stderr, "[!] Look for a proxy that doesn't check ident\n");
+            LOGERR("[-] SOCKS4 ERR: Ident conversation failed\n");
             break;
         default:
-            fprintf(stderr, "[-] SOCKS4 ERR: Unknown reply code\n");
+            LOGERR("[-] SOCKS4 ERR: Unknown reply code\n");
             break;
     }
     return -1;

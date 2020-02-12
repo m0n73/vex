@@ -2,30 +2,24 @@
 
 void usage(const char *name) 
 {
-    fprintf(stderr, "%s <-f proxy_list> <-l addr:port> [options]\n", name);
-    fprintf(stderr, "\nREQUIRED:\n");
-    fprintf(stderr, "  -f\tproxy_list\tPath to the proxy list (must be in\n");
-    fprintf(stderr, "\t\t\taddress:port format, one per line)\n");
-    fprintf(stderr, "  -l\taddr:port\tLocal address and port\n");
-    fprintf(stderr, "\nGENERAL OPTIONS:\n");
-    fprintf(stderr, 
-            "  -t\taddr:port\tTarget address [default: \"%s:%s\"]\n", 
+    LOGERR("%s <-f proxy_list> <-l addr:port> [options]\n", name);
+    LOGERR("\nREQUIRED:\n");
+    LOGERR("  -f\tproxy_list\tPath to the proxy list (must be in\n");
+    LOGERR("\t\t\taddress:port format, one per line)\n");
+    LOGERR("  -l\taddr:port\tLocal address and port\n");
+    LOGERR("\nGENERAL OPTIONS:\n");
+    LOGERR("  -t\taddr:port\tTarget address [default: \"%s:%s\"]\n", 
             DEFAULT_TADDR, DEFAULT_TPORT);
-    fprintf(stderr, 
-            "  -u\tusername\tUsername for SOCKS5 authentication, or for\n");
-    fprintf(stderr, 
-            "\t\t\tthe SOCKS4 userid field [default: \"%s\"]\n", 
-            DEFAULT_USER);
-    fprintf(stderr, 
-            "  -b\t\t\tBind at the local address, instead of connecting\n");
-    fprintf(stderr, "  -x\ttimeout\t\tConnection timeout [default: %d]\n", 
+    LOGERR("  -u\tusername\tUsername for SOCKS5 authentication, or for\n");
+    LOGERR("\t\t\tthe SOCKS4 userid field [default: \"%s\"]\n", DEFAULT_USER);
+    LOGERR("  -b\t\t\tBind at the local address, instead of connecting\n");
+    LOGERR("  -x\tseconds\t\tConnection timeout [default: %d]\n", 
             DEFAULT_TMOUT);
-    fprintf(stderr, "  -h\t\t\tDisplay this message\n");
-    fprintf(stderr, "\nSOCKS5 OPTIONS:\n");
-    fprintf(stderr, "  -5\t\t\tUse SOCKS5 [default: SOCKS4]\n");
-    fprintf(stderr, "  -a\t\t\tAdd User/Pass Authentication\n");
-    fprintf(stderr, 
-            "  -p\tpassword\tPassword for \'-a\' [default: \"%s\"]\n", 
+    LOGERR("  -h\t\t\tDisplay this message\n");
+    LOGERR("\nSOCKS5 OPTIONS:\n");
+    LOGERR("  -5\t\t\tUse SOCKS5 [default: SOCKS4]\n");
+    LOGERR("  -a\t\t\tAdd User/Pass Authentication\n");
+    LOGERR("  -p\tpassword\tPassword for \'-a\' [default: \"%s\"]\n\n",
             DEFAULT_PASS);
     exit(EXIT_FAILURE);
 }
@@ -45,7 +39,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
     if (!(pc = (struct proxy_config *) 
                 checked_calloc(1, sizeof(struct proxy_config))))
     {
-        fprintf(stderr, "calloc: %s\n", strerror(errno));
+        LOGERR("calloc: %s\n", strerror(errno));
         return NULL;
     }
 
@@ -74,8 +68,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
                 pc->tmout = strtol(optarg, NULL, 10);
                 if (!pc->tmout || pc->tmout == LONG_MAX)
                 {
-                    fprintf(stderr, 
-                            "[!] Invalid timeout value - using default\n");
+                    LOGERR("[!] Invalid timeout value - using default\n");
                     pc->tmout = DEFAULT_TMOUT;
                 }
                 break;
@@ -97,7 +90,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
 
     if (!pc->loc_addr || !pc->loc_port) 
     {
-        fprintf(stderr, "[!] Must specify local address and port\n");
+        LOGERR("[!] Must specify local address and port\n");
         usage(argv[0]);
     }
 
@@ -105,7 +98,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
 
     if (!pc->socks_list) 
     {
-        fprintf(stderr, "[!] Must specify proxy list filepath\n");
+        LOGERR("[!] Must specify proxy list filepath\n");
         usage(argv[0]);
     }
 
@@ -115,7 +108,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
     {
         if(!(targ_addr = strndup(DEFAULT_TADDR, INET_ADDRSTRLEN)))
         {
-            fprintf(stderr, "strndup: %s\n", strerror(errno));
+            LOGERR("strndup: %s\n", strerror(errno));
             goto fail;
         }
     }
@@ -124,7 +117,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
     {
        if (!(targ_port = strndup(DEFAULT_TPORT, MAX_PORT)))
        {
-           fprintf(stderr, "strndup: %s\n", strerror(errno));
+           LOGERR("strndup: %s\n", strerror(errno));
            goto fail;
        }
     }
@@ -134,7 +127,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
 
     if (targ_addr_t == IP6_ADDRESS && socks_type == SOCKS4)
     {
-        fprintf(stderr, "[!] IPv6 is not supported by SOCKS4\n");
+        LOGERR("[!] IPv6 is not supported by SOCKS4\n");
         goto fail;
     }
 
@@ -144,7 +137,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
     if ((pc->listen_fd = start_socket(pc->loc_addr, pc->loc_port,
                     pc->bind_local, pc->tmout)) == -1) 
     {
-        fprintf(stderr, "start_socket: %s\n", strerror(errno));
+        LOGERR("start_socket: %s\n", strerror(errno));
         goto fail;
     }
 

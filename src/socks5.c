@@ -5,6 +5,7 @@ static int socks5_auth_userpass(struct proxy_config *pc)
     uint8_t canvas[SOCKS5_USEPASSAUTH_BUFFER],
             ulen = (uint8_t) strnlen(pc->socks_conf->userid, MAX_USERID),
             plen = (uint8_t) strnlen(pc->socks_conf->passwd, MAX_PASSWD);
+    size_t io_len;
 
     memset(canvas, '\0', SOCKS5_USEPASSAUTH_BUFFER);
 
@@ -14,18 +15,21 @@ static int socks5_auth_userpass(struct proxy_config *pc)
     *(canvas+2+ulen) = plen;
     memcpy(canvas+3+ulen, pc->socks_conf->passwd, plen);
 
-    if (write_a(pc->socks_fd, canvas, 
-                (3+ulen+plen)*(sizeof(uint8_t))) == -1) return -1;
+    io_len = (3+ulen+plen)*(sizeof(uint8_t));
 
-    if (read_a(pc->socks_fd, canvas, 2*(sizeof(uint8_t))) == -1)
+    if (write_a(pc->socks_fd, canvas, &io_len)== -1) return -1;
+
+    io_len = 2*(sizeof(uint8_t));
+
+    if (read_a(pc->socks_fd, canvas, &io_len) == -1)
         return -1;
     
     if (canvas[1] == 0x00) 
     {
-        printf("[+] Username/Password authentication sucessful\n");
+        LOGUSR("[+] SOCKS5 MSG: Username/Password authentication sucessful\n");
         return 0;
     } else {
-        fprintf(stderr, "[-] Username/Password authentication failed\n");
+        LOGERR("[-] SOCKS5 ERR: Username/Password authentication failed\n");
         return -1;
     }
 }
@@ -33,17 +37,21 @@ static int socks5_auth_userpass(struct proxy_config *pc)
 static int socks5_negotiate_auth(struct proxy_config *pc)
 {
     uint8_t canvas[SOCKS5_NEGOTIATION_BUFFER]; 
+    size_t io_len;
 
     memset(canvas, '\0', SOCKS5_NEGOTIATION_BUFFER);
     *(canvas) = SOCKS5;
     *(canvas+1) = pc->socks_conf->no_methods;
     *(canvas+2) = 0;
 
-    if (write_a(pc->socks_fd, canvas, 
-        (((size_t) pc->socks_conf->no_methods + 2)*(sizeof(uint8_t)))) == -1)
+    io_len = (((size_t) pc->socks_conf->no_methods + 2)*(sizeof(uint8_t)));
+
+    if (write_a(pc->socks_fd, canvas, &io_len) == -1)
         return -1;
 
-    if (read_a(pc->socks_fd, canvas, 2*(sizeof(uint8_t))) == -1)
+    io_len = 2*(sizeof(uint8_t));
+
+    if (read_a(pc->socks_fd, canvas, &io_len) == -1)
         return -1;
 
     switch (*(canvas+1))
@@ -53,10 +61,10 @@ static int socks5_negotiate_auth(struct proxy_config *pc)
         case USERPASS:
             return socks5_auth_userpass(pc);
         case NO_METHODS:
-            fprintf(stderr, "[-] No acceptable methods\n");
+            LOGERR("[-] SOCKS5 ERR: No acceptable methods\n");
             return -1;
         default:
-            fprintf(stderr, "[-] Method 0x%02hhx is not implemented\n",
+            LOGERR("[-] SOCKS5 ERR: Method 0x%02hhx is not implemented\n",
                     *(canvas+1));
             return -1;
     }
@@ -68,13 +76,15 @@ static uint8_t socks5_recv_msg(struct proxy_config *pc)
     struct socks5_msg msg;
     uint8_t addr[sizeof(struct in6_addr)];
     uint16_t port;
-    size_t addr_size;
+    size_t addr_size, io_len;
 
     memset(&msg, '\0', sizeof(struct socks5_msg));
     memset(&addr, '\0', sizeof(struct in6_addr));
     memset(&addr_str, '\0', INET6_ADDRSTRLEN);
 
-    if (read_a(pc->socks_fd, &msg, sizeof(struct socks5_msg)) == -1)
+    io_len = sizeof(struct socks5_msg);
+
+    if (read_a(pc->socks_fd, &msg, &io_len) == -1)
         return 0xff;
 
     switch(msg.atyp)
@@ -86,15 +96,16 @@ static uint8_t socks5_recv_msg(struct proxy_config *pc)
             addr_size = sizeof(struct in6_addr);
             break;
         default:
-            fprintf(stderr, 
-                    "socks5_attempt: Proxy sent an unknown address type\n"); 
+            LOGERR("[-] SOCKS5 ERR: Proxy sent an unknown address type\n"); 
             return 0xff;
     }
 
-    if (read_a(pc->socks_fd, addr, addr_size) == -1)
+    if (read_a(pc->socks_fd, addr, &addr_size) == -1)
         return 0xff;
 
-    if (read_a(pc->socks_fd, &port, sizeof(uint16_t)) == -1)
+    io_len = sizeof(uint16_t);
+
+    if (read_a(pc->socks_fd, &port, &io_len) == -1)
         return 0xff;
 
     switch(msg.atyp)
@@ -102,26 +113,25 @@ static uint8_t socks5_recv_msg(struct proxy_config *pc)
         case IP_ADDRESS:
             if (!inet_ntop(AF_INET, (void *) addr, addr_str, INET_ADDRSTRLEN))
             {
-                fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
+                LOGERR("inet_ntop: %s\n", strerror(errno));
                 break;
             }
             break;
         case IP6_ADDRESS:
             if (!inet_ntop(AF_INET6, (void *) addr, addr_str, INET6_ADDRSTRLEN))
             {
-                fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
+                LOGERR("inet_ntop: %s\n", strerror(errno));
                 break;
             }
             break;
         default:
-            fprintf(stderr, 
-                    "socks5_attempt: Proxy sent an unknown address type\n"); 
+            LOGERR("[-] SOCKS5 ERR: Proxy sent an unknown address type\n"); 
             return 0xff;
     }
 
     if (msg.code == SUCCESS)
     {
-        printf("[+] SOCKS5 MSG: SUCCESS (%s:%d)\n", addr_str, ntohs(port));
+        LOGUSR("[+] SOCKS5 MSG: SUCCESS (%s:%d)\n", addr_str, ntohs(port));
         fflush(stdout);
     }
 
@@ -153,7 +163,7 @@ int socks5_attempt(struct proxy_config *pc)
             canvas_size = SOCKS5_IP6_REQ_BUFFER;
             break;
         default:
-            fprintf(stderr, "socks5_attempt: Unknown address type\n");
+            LOGERR("[-] SOCKS5 ERR: Unknown address type\n");
             return -1;
     }
 
@@ -161,7 +171,7 @@ int socks5_attempt(struct proxy_config *pc)
     memcpy(canvas+4+addr_size, &pc->target->port,
             sizeof(uint16_t));
 
-    if (write_a(pc->socks_fd, canvas, canvas_size) == -1) return -1;
+    if (write_a(pc->socks_fd, canvas, &canvas_size) == -1) return -1;
 
     if ((reply_code = socks5_recv_msg(pc)) == SUCCESS)
         if ((reply_code = socks5_recv_msg(pc)) == SUCCESS)
@@ -170,31 +180,31 @@ int socks5_attempt(struct proxy_config *pc)
     switch(reply_code)
     {
         case SOCKS_FAIL:
-            fprintf(stderr, "[-] SOCKS5 ERR: General SOCKS server failure\n");
+            LOGERR("[-] SOCKS5 ERR: General SOCKS server failure\n");
             break;
         case NOT_ALLOWED:
-            fprintf(stderr, "[-] SOCKS5 ERR: Connection not allowed\n");
+            LOGERR("[-] SOCKS5 ERR: Connection not allowed\n");
             break;
         case NET_UNREACHABLE:
-            fprintf(stderr, "[-] SOCKS5 ERR: Network unreachable\n");
+            LOGERR("[-] SOCKS5 ERR: Network unreachable\n");
             break;
         case HOST_UNREACHABLE:
-            fprintf(stderr, "[-] SOCKS5 ERR: Target unreachable\n");
+            LOGERR("[-] SOCKS5 ERR: Target unreachable\n");
             break;
         case REFUSED:
-            fprintf(stderr, "[-] SOCKS5 ERR: Connection refused\n");
+            LOGERR("[-] SOCKS5 ERR: Connection refused\n");
             break;
         case TTL_EXPIRE:
-            fprintf(stderr, "[-] SOCKS5 ERR: TTL expired\n");
+            LOGERR("[-] SOCKS5 ERR: TTL expired\n");
             break;
         case CMD_NOT_SUPPORTED:
-            fprintf(stderr, "[-] SOCKS5 ERR: Command not supported\n");
+            LOGERR("[-] SOCKS5 ERR: Command not supported\n");
             break;
         case ADDR_NOT_SUPPORTED:
-            fprintf(stderr, "[-] SOCKS5 ERR: Address type not supported\n");
+            LOGERR("[-] SOCKS5 ERR: Address type not supported\n");
             break;
         default:
-            fprintf(stderr, "[-] socks5_recv_msg failed\n");
+            LOGERR("[-] SOCKS5 ERR: Unknown failure\n");
             break; 
     }
     return -1;
