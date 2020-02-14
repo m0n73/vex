@@ -1,15 +1,22 @@
 #include <vex.h>
 
-int read_a(int s, void *src, size_t *len)
+ssize_t read_a(int s, void *src, size_t *len)
 {
     size_t total = 0, left = *len;
-    ssize_t rlen = 0;
+    ssize_t rlen = 0, offt;
 
     while (total < *len)
     {
         if ((rlen = read(s, src+total, left)) == -1)
         {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) return -1;
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                *len = left;
+                offt = (ssize_t) total;
+                if (offt < 0) offt = -1;
+                return offt;
+            }
+
             LOGERR("read: %s\n", strerror(errno));
             return -1;
         }
@@ -27,16 +34,22 @@ int read_a(int s, void *src, size_t *len)
     return 0;
 }
 
-int write_a(int s, void *dst, size_t *len)
+ssize_t write_a(int s, void *dst, size_t *len)
 {
     size_t total = 0, left = *len;
-    ssize_t wlen = 0;
+    ssize_t wlen = 0, offt ;
 
     while (total < *len)
     {
         if ((wlen = write(s, dst+total, left)) == -1)
         {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) return -1;
+            if (errno == EAGAIN || errno == EWOULDBLOCK) 
+            {
+                *len = left;
+                offt = (ssize_t) total;
+                if (offt < 0) offt = -1;
+                return offt;
+            }
             LOGERR("write: %s\n", strerror(errno));
             return -1;
         }
@@ -123,8 +136,9 @@ void *checked_calloc(size_t nmemb, size_t size)
     test = nmemb * size;
 
     if (test)
-        if (size/test == nmemb)
+        if (test/size == nmemb)
             return calloc(nmemb, size);
+
     errno = ERANGE;
     return NULL;
 }

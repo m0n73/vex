@@ -18,8 +18,8 @@
 #define LOGDBG(...) ;
 #endif
 
-int write_a(int, void *, size_t *);
-int read_a(int, void *, size_t *);
+ssize_t write_a(int, void *, size_t *);
+ssize_t read_a(int, void *, size_t *);
 int toggle_sock_block(int, int);
 int timeout_wait(int, long, int);
 void strip_trail(char *, size_t);

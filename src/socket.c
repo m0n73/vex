@@ -1,5 +1,206 @@
 #include <vex.h>
 
+static struct sq_fifo *init_sq_fifo(void *buff)
+{
+    struct sq_fifo *ret = NULL;
+
+    if (!(ret = (struct sq_fifo *) checked_calloc(1,
+                    sizeof(struct sq_fifo))))
+    {
+        LOGERR("calloc failed: %s\n", strerror(errno));
+        return NULL;
+    }
+
+    if (!buff)
+    {
+        if (!(ret->buff = (uint8_t *) 
+                    checked_calloc(IOBUFF_SZ, sizeof(uint8_t))))
+        {
+            LOGERR("calloc failed: %s\n", strerror(errno));
+            free(ret);
+            ret = NULL;
+        }
+    } else {
+        ret->buff = (uint8_t *) buff;
+    }
+    return ret;
+}
+
+static struct send_queue *init_sq(void)
+{
+    struct send_queue *ret = NULL;
+
+    if (!(ret = (struct send_queue *) checked_calloc(1, 
+                    sizeof(struct send_queue))))
+    {
+        LOGERR("calloc failed: %s\n", strerror(errno));
+        return NULL;
+    }
+
+    ret->sq_len = 1;
+
+    if (!(ret->sq_head = init_sq_fifo(NULL)))
+    {
+        free(ret);
+        ret = NULL;
+        return NULL;
+    }
+
+    ret->sq_tail = ret->sq_head;
+    return ret;
+}
+
+static void free_sq_fifo(struct sq_fifo *head)
+{
+    struct sq_fifo *tmp = NULL,
+                   *it = head;
+    while (it)
+    {
+        if (it->buff)
+        {
+            free(it->buff);
+            it->buff = NULL;
+        }
+        tmp = it->next;
+        it->next = NULL;
+        free(it);
+        it = tmp;
+    }
+}
+
+static void free_sq(struct send_queue *sq)
+{
+    if (sq)
+    {
+        free_sq_fifo(sq->sq_head);
+        sq->sq_head = NULL;
+        free(sq);
+        sq = NULL;
+    }
+}
+
+static void shift_sq(struct send_queue *sq)
+{
+    struct sq_fifo *tmp = NULL;
+
+    if (sq)
+    {
+        if (!sq->sq_head->next)
+        {
+            memset(sq->sq_head->buff, '\0', IOBUFF_SZ);
+            sq->sq_head->offt = 0;
+            sq->sq_head->len = 0;
+        } else {
+            sq->sq_len--;
+            if (sq->sq_head->buff)
+            {
+                free(sq->sq_head->buff);
+                sq->sq_head->buff = NULL;
+            }
+            tmp = sq->sq_head->next;
+            sq->sq_head->next = NULL;
+            sq->sq_head = tmp;
+        }
+    }
+}
+
+static struct sq_fifo *add_sq(struct send_queue *sq, void *buff)
+{
+    if (!sq) 
+    {
+        errno = EINVAL;
+        return NULL;
+    }
+    
+    if (sq->sq_len == MAX_SEND_QUEUE)
+    {
+        LOGERR("[!] Max send queue reached\n");
+        return NULL;
+    }
+
+    sq->sq_len++;
+
+    if (!(sq->sq_tail->next = init_sq_fifo(buff)))
+        return NULL;
+
+    sq->sq_tail = sq->sq_tail->next;
+
+    return sq->sq_tail;
+}
+
+static ssize_t read_into_sq(int s, struct send_queue *sq)
+{
+    uint8_t *buff = NULL;
+    ssize_t read_bytes = 0;
+
+    if (!sq) 
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (!(buff = (uint8_t *) checked_calloc(IOBUFF_SZ, sizeof(uint8_t))))
+    {
+        LOGERR("calloc: %s\n", strerror(errno));
+        return -1;
+    }
+
+    read_bytes = read(s, (void *) buff, IOBUFF_SZ*sizeof(uint8_t));
+
+    if (read_bytes > 0)
+    {
+        if (!sq->sq_head->len)
+        {
+            if (sq->sq_head->buff)
+                free(sq->sq_head->buff);
+            sq->sq_head->buff = buff;
+            sq->sq_head->len = read_bytes;
+        } else {
+            if (!add_sq(sq, buff))
+            {
+                LOGERR("add_sq: %s\n", strerror(errno));
+                free(buff);
+                buff = NULL;
+                return -1;
+            }
+            sq->sq_tail->len = read_bytes;
+        }
+        return 1;
+    } else {
+        free(buff);
+        buff = NULL;
+        if (read_bytes == -1) 
+        {
+            if (errno == EWOULDBLOCK || errno == EAGAIN) return 1;
+            LOGERR("read: %s\n", strerror(errno));
+        }
+    }
+    return read_bytes;
+}
+
+static int push_sq(int s, struct send_queue *sq)
+{
+    if (!sq)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    struct sq_fifo *it_head = sq->sq_head;
+
+    it_head->offt = write_a(s, it_head->buff + it_head->offt,
+            (size_t *) &it_head->len);
+
+    if (it_head->offt)
+    {
+        return it_head->offt;
+    } else {
+        it_head = NULL;
+        shift_sq(sq);
+        return 0;
+    } 
+}
+
 static int attempt_connect(int s, const struct sockaddr *address, 
         socklen_t addrlen, long tmout)
 {
@@ -93,13 +294,23 @@ int start_socket(const char *host, const char *port, int server, long tmout)
 void event_loop(struct proxy_config *pc)
 {
     int max = 0;
-    ssize_t read_bytes = 0;
-    char iobuff[IOBUFF_SZ];
+    char dn_buff[IOBUFF_SZ],
+         up_buff[IOBUFF_SZ];
 
-    fd_set r_test, r_ready;
+    struct send_queue *up_sq = init_sq(),
+                      *dn_sq = init_sq();
+
+    if (!up_sq || !dn_sq) return;
+
+    fd_set r_test, r_ready, w_test, w_ready;
 
     FD_ZERO(&r_test);
     FD_ZERO(&r_ready);
+    FD_ZERO(&w_test);
+    FD_ZERO(&w_test);
+
+    memset(dn_buff, 0, IOBUFF_SZ);
+    memset(up_buff, 0, IOBUFF_SZ);
     
     if (pc->bind_local)
     {
@@ -127,68 +338,67 @@ void event_loop(struct proxy_config *pc)
     while (1)
     {
         memcpy(&r_ready, &r_test, sizeof(fd_set));
+        memcpy(&w_ready, &w_test, sizeof(fd_set));
 
-        if (select(max, &r_ready, NULL, NULL, NULL) == -1)
+        if (select(max, &r_ready, &w_ready, NULL, NULL) == -1)
         {
             LOGERR("select: %s\n", strerror(errno));
             goto exit_loop;
         }
 
-        memset(iobuff, 0, IOBUFF_SZ);
-
-        if (FD_ISSET(pc->client_fd, &r_ready))
+        if (FD_ISSET(pc->client_fd, &w_ready))
         {
-            if ((read_bytes = read(pc->client_fd, iobuff, IOBUFF_SZ)) == -1)
+            switch(push_sq(pc->client_fd, dn_sq))
             {
-                if (errno != EAGAIN && errno != EWOULDBLOCK)
-                {
-                    LOGERR("read: %s\n", strerror(errno));
+                case -1:
+                    LOGERR("push_sq: %s\n", strerror(errno));
                     goto exit_loop;
-                }
-            } else {
-                if (!read_bytes) 
-                {
-                    LOGUSR("[-] EOF from the local connection\n");
-                    goto exit_loop;
-                }
-
-                if (write_a(pc->socks_fd, iobuff, (size_t *) &read_bytes) == -1) 
-                {
-                    if (errno != EAGAIN && errno != EWOULDBLOCK)
-                        goto exit_loop;
-                }
+                default:
+                    FD_SET(pc->client_fd, &w_test);
+                    break;
+                case 0:
+                    if (!dn_sq->sq_head->len)
+                        FD_CLR(pc->client_fd, &w_test);
+                    break;
             }
         }
 
-        memset(iobuff, 0, IOBUFF_SZ);
+        if (FD_ISSET(pc->socks_fd, &w_ready))
+        {
+            switch(push_sq(pc->socks_fd, up_sq))
+            {
+                case -1:
+                    LOGERR("push_sq: %s\n", strerror(errno));
+                    goto exit_loop;
+                default:
+                    FD_SET(pc->socks_fd, &w_test);
+                    break;
+                case 0:
+                    if (!up_sq->sq_head->len)
+                        FD_CLR(pc->socks_fd, &w_test);
+                    break;
+            }
+        }
+        
+        if (FD_ISSET(pc->client_fd, &r_ready))
+        {
+            if (read_into_sq(pc->client_fd, up_sq) <= 0) goto exit_loop;
+            FD_SET(pc->socks_fd, &w_test);
+        }
 
         if (FD_ISSET(pc->socks_fd, &r_ready))
         {
-            if ((read_bytes = read(pc->socks_fd, iobuff, IOBUFF_SZ)) == -1)
-            {
-                if (errno != EAGAIN && errno != EWOULDBLOCK)
-                {
-                    LOGERR("read: %s\n", strerror(errno));
-                    goto exit_loop;
-                }
-            } else {
-
-                if (!read_bytes) 
-                {
-                    LOGUSR("[-] EOF from the proxy\n");
-                    goto exit_loop;
-                }
-
-                if (write_a(pc->client_fd, iobuff, (size_t *) &read_bytes) == -1) 
-                {
-                    if (errno != EAGAIN && errno != EWOULDBLOCK)
-                        goto exit_loop;
-                }
-            }
+            if (read_into_sq(pc->socks_fd, dn_sq) <= 0) goto exit_loop;
+            FD_SET(pc->client_fd, &w_test);
         }
+
     }
 exit_loop:
     close(pc->client_fd);
     close(pc->socks_fd);
+    free_sq(up_sq);
+    up_sq = NULL;
+    free_sq(dn_sq);
+    dn_sq = NULL;
     return;
 }

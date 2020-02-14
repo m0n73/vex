@@ -75,7 +75,8 @@ next:
 
 void free_socks_list(struct socks_list *head)
 {
-    struct socks_list *it = head, *temp;
+    struct socks_list *it = head,
+                      *tmp = NULL;
     while (it)
     {
         if (it->addr)
@@ -88,9 +89,9 @@ void free_socks_list(struct socks_list *head)
             free(it->port);
             it->port = NULL;
         }
-        temp = it->next;
+        tmp = it->next;
         it->next = NULL;
         free(it);
-        it = temp;
+        it = tmp;
     }
 }

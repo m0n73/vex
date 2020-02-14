@@ -31,7 +31,6 @@
 #define MAX_USERID      255
 #define MAX_PASSWD      255
 #define MAX_ADDR_PORT   INET6_ADDRSTRLEN + MAX_PORT + 2
-#define IOBUFF_SZ       8192
 
 #include "v_util.h"
 #include "v_config.h"
