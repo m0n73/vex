@@ -294,9 +294,6 @@ int start_socket(const char *host, const char *port, int server, long tmout)
 void event_loop(struct proxy_config *pc)
 {
     int max = 0;
-    char dn_buff[IOBUFF_SZ],
-         up_buff[IOBUFF_SZ];
-
     struct send_queue *up_sq = init_sq(),
                       *dn_sq = init_sq();
 
@@ -309,9 +306,6 @@ void event_loop(struct proxy_config *pc)
     FD_ZERO(&w_test);
     FD_ZERO(&w_test);
 
-    memset(dn_buff, 0, IOBUFF_SZ);
-    memset(up_buff, 0, IOBUFF_SZ);
-    
     if (pc->bind_local)
     {
         if (listen(pc->listen_fd, 1) == -1)
