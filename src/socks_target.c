@@ -8,7 +8,7 @@ static void *make_addr(uint8_t addr_type, const char * addr)
 
     memset(&addr_buff, '\0', sizeof(struct in6_addr));
 
-    switch(addr_type)
+    switch (addr_type)
     {
         case IP_ADDRESS:
             af = AF_INET;

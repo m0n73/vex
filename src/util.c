@@ -23,7 +23,7 @@ ssize_t read_a(int s, void *src, size_t *len)
 
         if (!rlen)
         {
-            LOGERR("[-] Received EOF.\n");
+            LOGERR("[-] read_a: eceived EOF.\n");
             errno = EPIPE;
             return -1;
         }
@@ -31,13 +31,15 @@ ssize_t read_a(int s, void *src, size_t *len)
         left -= rlen;
         total += rlen;
     }
+    *len = 0;
+    errno = 0;
     return 0;
 }
 
 ssize_t write_a(int s, void *dst, size_t *len)
 {
     size_t total = 0, left = *len;
-    ssize_t wlen = 0, offt ;
+    ssize_t wlen = 0, offt;
 
     while (total < *len)
     {
@@ -56,6 +58,8 @@ ssize_t write_a(int s, void *dst, size_t *len)
         left -= wlen;
         total += wlen;
     }
+    *len = 0;
+    errno = 0;
     return 0;
 }
 

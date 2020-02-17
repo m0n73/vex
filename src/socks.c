@@ -4,13 +4,14 @@ struct socks_config *init_socks(uint8_t version, uint32_t methods)
 {
     int i = 0;
     struct socks_config *sc;
-    if (!(sc = (struct socks_config *) calloc(1, sizeof(struct socks_config))))
+    if (!(sc = (struct socks_config *) checked_calloc(1, 
+                    sizeof(struct socks_config))))
     {
         LOGERR("calloc: %s\n", strerror(errno));
         return NULL;
     }
 
-    switch(sc->socks_version = version)
+    switch (sc->socks_version = version)
     {
         case SOCKS4:
             return sc;
@@ -42,7 +43,7 @@ int attempt_socks_connect(struct proxy_config *pc)
                         0, pc->tmout)) != -1) 
         {
             LOGUSR("[+] Connected to %s:%s\n", it->addr, it->port);
-            switch(pc->socks_conf->socks_version)
+            switch (pc->socks_conf->socks_version)
             {
                 case SOCKS4:
                     if (socks4_attempt(pc) == -1) 

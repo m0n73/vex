@@ -2,9 +2,11 @@
 
 int socks4_attempt(struct proxy_config *pc)
 {
+    int tmout_state;
     char addr_str[INET_ADDRSTRLEN];
     uint8_t canvas[SOCKS4_REQ_BUFFER];
     size_t io_len, ulen = strnlen(pc->socks_conf->userid, MAX_USERID-1);
+    ssize_t offt = 0;
     struct socks4_msg msg;
 
     memset(&msg, '\0', sizeof(struct socks4_msg));
@@ -19,13 +21,52 @@ int socks4_attempt(struct proxy_config *pc)
 
     io_len = (9+ulen)*(sizeof(uint8_t));
 
-    if (write_a(pc->socks_fd, canvas, &io_len) == -1)
-        return -1;
+    if (toggle_sock_block(pc->socks_fd, 0) == -1) return -1;
+
+    while ((offt = write_a(pc->socks_fd, canvas+offt, &io_len)) >= 0)
+    {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+            tmout_state = timeout_wait(pc->socks_fd, pc->tmout, TM_WRITE);
+
+            if (!tmout_state)
+            {
+                LOGUSR("[-] SOCKS4 ERR: write timed out (%ld s)\n", pc->tmout);
+                return -1;
+            } else if (tmout_state == -1) {
+                return -1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (offt == -1) return -1;
 
     io_len = sizeof(struct socks4_msg);
+    offt = 0;
 
-    if (read_a(pc->socks_fd, &msg, &io_len) == -1)
-        return -1;
+    while ((offt = read_a(pc->socks_fd, &msg+offt, &io_len)) >= 0)
+    {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+            tmout_state = timeout_wait(pc->socks_fd, pc->tmout, TM_READ);
+
+            if (!tmout_state)
+            {
+                LOGUSR("[-] SOCKS4 ERR: read timed out (%ld s)\n", pc->tmout);
+                return -1;
+            } else if (tmout_state == -1) {
+                return -1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (offt == -1) return -1;
+
+    if (toggle_sock_block(pc->socks_fd, 1) == -1) return -1;
 
     if (msg.code == GRANTED)
     {
@@ -60,7 +101,7 @@ int socks4_attempt(struct proxy_config *pc)
         } 
     }
 
-    switch(msg.code)
+    switch (msg.code)
     {
         case REJECTED:
             LOGERR("[-] SOCKS4 ERR: Proxy rejected request\n");

@@ -195,8 +195,11 @@ static int push_sq(int s, struct send_queue *sq)
     {
         return it_head->offt;
     } else {
-        it_head = NULL;
-        shift_sq(sq);
+        if (!errno)
+        {
+            it_head = NULL;
+            shift_sq(sq);
+        }
         return 0;
     } 
 }
@@ -342,7 +345,7 @@ void event_loop(struct proxy_config *pc)
 
         if (FD_ISSET(pc->client_fd, &w_ready))
         {
-            switch(push_sq(pc->client_fd, dn_sq))
+            switch (push_sq(pc->client_fd, dn_sq))
             {
                 case -1:
                     LOGERR("push_sq: %s\n", strerror(errno));
@@ -353,13 +356,15 @@ void event_loop(struct proxy_config *pc)
                 case 0:
                     if (!dn_sq->sq_head->len)
                         FD_CLR(pc->client_fd, &w_test);
+                    else
+                        FD_SET(pc->socks_fd, &w_test);
                     break;
             }
         }
 
         if (FD_ISSET(pc->socks_fd, &w_ready))
         {
-            switch(push_sq(pc->socks_fd, up_sq))
+            switch (push_sq(pc->socks_fd, up_sq))
             {
                 case -1:
                     LOGERR("push_sq: %s\n", strerror(errno));
@@ -370,6 +375,8 @@ void event_loop(struct proxy_config *pc)
                 case 0:
                     if (!up_sq->sq_head->len)
                         FD_CLR(pc->socks_fd, &w_test);
+                    else
+                        FD_SET(pc->socks_fd, &w_test);
                     break;
             }
         }

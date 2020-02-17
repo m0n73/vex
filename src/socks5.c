@@ -2,10 +2,12 @@
 
 static int socks5_auth_userpass(struct proxy_config *pc)
 {
+    int tmout_state;
     uint8_t canvas[SOCKS5_USEPASSAUTH_BUFFER],
             ulen = (uint8_t) strnlen(pc->socks_conf->userid, MAX_USERID),
             plen = (uint8_t) strnlen(pc->socks_conf->passwd, MAX_PASSWD);
     size_t io_len;
+    ssize_t offt = 0;
 
     memset(canvas, '\0', SOCKS5_USEPASSAUTH_BUFFER);
 
@@ -17,13 +19,49 @@ static int socks5_auth_userpass(struct proxy_config *pc)
 
     io_len = (3+ulen+plen)*(sizeof(uint8_t));
 
-    if (write_a(pc->socks_fd, canvas, &io_len)== -1) return -1;
+    while ((offt = write_a(pc->socks_fd, canvas+offt, &io_len)) >= 0)
+    {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+            tmout_state = timeout_wait(pc->socks_fd, pc->tmout, TM_WRITE);
+
+            if (!tmout_state)
+            {
+                LOGUSR("[-] SOCKS5 ERR: write timed out (%ld s)\n", pc->tmout);
+                return -1;
+            } else if (tmout_state == -1) {
+                return -1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (offt == -1) return -1;
 
     io_len = 2*(sizeof(uint8_t));
+    offt = 0;
 
-    if (read_a(pc->socks_fd, canvas, &io_len) == -1)
-        return -1;
-    
+    while ((offt = read_a(pc->socks_fd, canvas+offt, &io_len)) >= 0)
+    {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+            tmout_state = timeout_wait(pc->socks_fd, pc->tmout, TM_READ);
+
+            if (!tmout_state)
+            {
+                LOGUSR("[-] SOCKS5 ERR: read timed out (%ld s)\n", pc->tmout);
+                return -1;
+            } else if (tmout_state == -1) {
+                return -1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (offt == -1) return -1;
+
     if (canvas[1] == 0x00) 
     {
         LOGUSR("[+] SOCKS5 MSG: Username/Password authentication sucessful\n");
@@ -36,8 +74,10 @@ static int socks5_auth_userpass(struct proxy_config *pc)
 
 static int socks5_negotiate_auth(struct proxy_config *pc)
 {
+    int tmout_state;
     uint8_t canvas[SOCKS5_NEGOTIATION_BUFFER]; 
     size_t io_len;
+    ssize_t offt = 0;
 
     memset(canvas, '\0', SOCKS5_NEGOTIATION_BUFFER);
     *(canvas) = SOCKS5;
@@ -46,13 +86,48 @@ static int socks5_negotiate_auth(struct proxy_config *pc)
 
     io_len = (((size_t) pc->socks_conf->no_methods + 2)*(sizeof(uint8_t)));
 
-    if (write_a(pc->socks_fd, canvas, &io_len) == -1)
-        return -1;
+    while ((offt = write_a(pc->socks_fd, canvas+offt, &io_len)) >= 0)
+    {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+            tmout_state = timeout_wait(pc->socks_fd, pc->tmout, TM_WRITE);
+
+            if (!tmout_state)
+            {
+                LOGUSR("[-] SOCKS5 ERR: write timed out (%ld s)\n", pc->tmout);
+                return -1;
+            } else if (tmout_state == -1) {
+                return -1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (offt == -1) return -1;
 
     io_len = 2*(sizeof(uint8_t));
+    offt = 0;
 
-    if (read_a(pc->socks_fd, canvas, &io_len) == -1)
-        return -1;
+    while ((offt = read_a(pc->socks_fd, canvas+offt, &io_len)) >= 0)
+    {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+            tmout_state = timeout_wait(pc->socks_fd, pc->tmout, TM_READ);
+
+            if (!tmout_state)
+            {
+                LOGUSR("[-] SOCKS5 ERR: read timed out (%ld s)\n", pc->tmout);
+                return -1;
+            } else if (tmout_state == -1) {
+                return -1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (offt == -1) return -1;
 
     switch (*(canvas+1))
     {
@@ -72,11 +147,13 @@ static int socks5_negotiate_auth(struct proxy_config *pc)
 
 static uint8_t socks5_recv_msg(struct proxy_config *pc)
 {        
+    int tmout_state;
     char addr_str[INET6_ADDRSTRLEN];
     struct socks5_msg msg;
     uint8_t addr[sizeof(struct in6_addr)];
     uint16_t port;
     size_t addr_size, io_len;
+    ssize_t offt = 0;
 
     memset(&msg, '\0', sizeof(struct socks5_msg));
     memset(&addr, '\0', sizeof(struct in6_addr));
@@ -84,10 +161,27 @@ static uint8_t socks5_recv_msg(struct proxy_config *pc)
 
     io_len = sizeof(struct socks5_msg);
 
-    if (read_a(pc->socks_fd, &msg, &io_len) == -1)
-        return 0xff;
+    while ((offt = read_a(pc->socks_fd, &msg+offt, &io_len)) >= 0)
+    {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+            tmout_state = timeout_wait(pc->socks_fd, pc->tmout, TM_READ);
 
-    switch(msg.atyp)
+            if (!tmout_state)
+            {
+                LOGUSR("[-] SOCKS5 ERR: read timed out (%ld s)\n", pc->tmout);
+                return -1;
+            } else if (tmout_state == -1) {
+                return -1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (offt == -1) return 0xff;
+
+    switch (msg.atyp)
     {
         case IP_ADDRESS:
             addr_size = sizeof(struct in_addr);
@@ -100,15 +194,52 @@ static uint8_t socks5_recv_msg(struct proxy_config *pc)
             return 0xff;
     }
 
-    if (read_a(pc->socks_fd, addr, &addr_size) == -1)
-        return 0xff;
+    offt = 0;
+
+    while ((offt = read_a(pc->socks_fd, addr+offt, &addr_size)) >= 0)
+    {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+            tmout_state = timeout_wait(pc->socks_fd, pc->tmout, TM_READ);
+
+            if (!tmout_state)
+            {
+                LOGUSR("[-] SOCKS5 ERR: read timed out (%ld s)\n", pc->tmout);
+                return -1;
+            } else if (tmout_state == -1) {
+                return -1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (offt == -1) return 0xff;
 
     io_len = sizeof(uint16_t);
+    offt = 0;
 
-    if (read_a(pc->socks_fd, &port, &io_len) == -1)
-        return 0xff;
+    while ((offt = read_a(pc->socks_fd, &port+offt, &io_len)) >= 0)
+    {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+            tmout_state = timeout_wait(pc->socks_fd, pc->tmout, TM_READ);
 
-    switch(msg.atyp)
+            if (!tmout_state)
+            {
+                LOGUSR("[-] SOCKS5 ERR: read timed out (%ld s)\n", pc->tmout);
+                return -1;
+            } else if (tmout_state == -1) {
+                return -1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (offt == -1) return 0xff;
+
+    switch (msg.atyp)
     {
         case IP_ADDRESS:
             if (!inet_ntop(AF_INET, (void *) addr, addr_str, INET_ADDRSTRLEN))
@@ -140,14 +271,18 @@ static uint8_t socks5_recv_msg(struct proxy_config *pc)
 
 int socks5_attempt(struct proxy_config *pc)
 {
+    int tmout_state;
     uint8_t canvas[SOCKS5_IP6_REQ_BUFFER], reply_code;
     size_t addr_size, canvas_size;
+    ssize_t offt = 0;
 
     memset(canvas, '\0', SOCKS5_IP6_REQ_BUFFER);
 
     *(canvas) = SOCKS5;
     *(canvas+1) = BIND;
     *(canvas+3) = pc->target->type;
+
+    if (toggle_sock_block(pc->socks_fd, 0) == -1) return -1;
 
     if (socks5_negotiate_auth(pc) == -1)
         return -1;
@@ -171,13 +306,35 @@ int socks5_attempt(struct proxy_config *pc)
     memcpy(canvas+4+addr_size, &pc->target->port,
             sizeof(uint16_t));
 
-    if (write_a(pc->socks_fd, canvas, &canvas_size) == -1) return -1;
+    while ((offt = write_a(pc->socks_fd, canvas+offt, &canvas_size)) >= 0)
+    {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+            tmout_state = timeout_wait(pc->socks_fd, pc->tmout, TM_WRITE);
+
+            if (!tmout_state)
+            {
+                LOGUSR("[-] SOCKS5 ERR: write timed out (%ld s)\n", 
+                        pc->tmout);
+                return -1;
+            } else if (tmout_state == -1) {
+                return -1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (offt == -1) return -1;
 
     if ((reply_code = socks5_recv_msg(pc)) == SUCCESS)
+    {
+        if (toggle_sock_block(pc->socks_fd, 1) == -1) return -1;
         if ((reply_code = socks5_recv_msg(pc)) == SUCCESS)
             return 0;
+    }
 
-    switch(reply_code)
+    switch (reply_code)
     {
         case SOCKS_FAIL:
             LOGERR("[-] SOCKS5 ERR: General SOCKS server failure\n");
