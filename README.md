@@ -34,8 +34,8 @@ GENERAL OPTIONS:
 
 SOCKS5 OPTIONS:
   -5			Use SOCKS5 [default: SOCKS4]
-  -a			Add User/Pass Authentication
-  -p	password	Password for '-a' [default: "pass"]
+  -p	password	Password for SOCKS5 authentication; this option
+			enables User/Password authentication
 ```
 
 `vex` expects a proxy-list text file. This file should contain addresses in

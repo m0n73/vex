@@ -5,7 +5,6 @@
 
 #define DEFAULT_TMOUT       20
 #define DEFAULT_USER        "anonymous"
-#define DEFAULT_PASS        "pass"
 #define DEFAULT_TADDR       "255.255.255.255"
 #define DEFAULT_TPORT       "0"
 

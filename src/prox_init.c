@@ -18,9 +18,8 @@ void usage(const char *name)
     LOGERR("  -h\t\t\tDisplay this message\n");
     LOGERR("\nSOCKS5 OPTIONS:\n");
     LOGERR("  -5\t\t\tUse SOCKS5 [default: SOCKS4]\n");
-    LOGERR("  -a\t\t\tAdd User/Pass Authentication\n");
-    LOGERR("  -p\tpassword\tPassword for \'-a\' [default: \"%s\"]\n\n",
-            DEFAULT_PASS);
+    LOGERR("  -p\tpassword\tPassword for SOCKS5 authentication; this option\n");
+    LOGERR("\t\t\tenables User/Password authentication\n\n");
     exit(EXIT_FAILURE);
 }
 
@@ -43,7 +42,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
         return NULL;
     }
 
-    while ((opt = getopt(argc, argv, "5ahbx:f:l:t:u:p:")) != -1)
+    while ((opt = getopt(argc, argv, "5hbx:f:l:t:u:p:")) != -1)
     {
         switch (opt)
         {
@@ -63,6 +62,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
                 break;
             case 'p':
                 passwd = optarg;
+                methods |= USERPASS;
                 break;
             case 'x':
                 pc->tmout = strtol(optarg, NULL, 10);
@@ -74,9 +74,6 @@ struct proxy_config *init_proxy(int argc, char **argv)
                 break;
             case 'b':
                 pc->bind_local = 1;
-                break;
-            case 'a':
-                methods |= USERPASS;
                 break;
             case '5':
                 socks_type = SOCKS5;
@@ -123,7 +120,7 @@ struct proxy_config *init_proxy(int argc, char **argv)
     }
 
     pc->socks_conf->userid = userid ? userid : DEFAULT_USER;
-    pc->socks_conf->passwd = passwd ? passwd : DEFAULT_PASS;
+    pc->socks_conf->passwd = passwd;
 
     if (targ_addr_t == IP6_ADDRESS && socks_type == SOCKS4)
     {
