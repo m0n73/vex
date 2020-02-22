@@ -74,6 +74,7 @@ static int socks5_auth_userpass(struct proxy_config *pc)
 
 static int socks5_negotiate_auth(struct proxy_config *pc)
 {
+    int i = 0;
     int tmout_state;
     uint8_t canvas[SOCKS5_NEGOTIATION_BUFFER]; 
     size_t io_len;
@@ -82,7 +83,9 @@ static int socks5_negotiate_auth(struct proxy_config *pc)
     memset(canvas, '\0', SOCKS5_NEGOTIATION_BUFFER);
     *(canvas) = SOCKS5;
     *(canvas+1) = pc->socks_conf->no_methods;
-    *(canvas+2) = 0;
+
+    for (; i < pc->socks_conf->no_methods; i++)
+        *(canvas+2+i) = pc->socks_conf->methods[i];
 
     io_len = (((size_t) pc->socks_conf->no_methods + 2)*(sizeof(uint8_t)));
 

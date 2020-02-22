@@ -29,7 +29,7 @@ GENERAL OPTIONS:
   -u	username	Username for SOCKS5 authentication, or for
 			the SOCKS4 userid field [default: "anonymous"]
   -b			Bind at the local address, instead of connecting
-  -x	seconds		Connection timeout [default: 20]
+  -x	seconds		Connection/SOCKS negotiation timeout [default: 20]
   -h			Display this message
 
 SOCKS5 OPTIONS:

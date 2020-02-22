@@ -13,7 +13,7 @@ void usage(const char *name)
     LOGERR("  -u\tusername\tUsername for SOCKS5 authentication, or for\n");
     LOGERR("\t\t\tthe SOCKS4 userid field [default: \"%s\"]\n", DEFAULT_USER);
     LOGERR("  -b\t\t\tBind at the local address, instead of connecting\n");
-    LOGERR("  -x\tseconds\t\tConnection timeout [default: %d]\n", 
+    LOGERR("  -x\tseconds\t\tConnection/SOCKS negotiation timeout [default: %d]\n", 
             DEFAULT_TMOUT);
     LOGERR("  -h\t\t\tDisplay this message\n");
     LOGERR("\nSOCKS5 OPTIONS:\n");
