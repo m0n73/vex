@@ -1,7 +1,7 @@
 #ifndef V_SOCKET_H
 #define V_SOCKET_H
 
-#define MAX_SEND_QUEUE  10
+#define MAX_SEND_QUEUE  2000
 #define IOBUFF_SZ       4096
 #define SELECT_TMOUT    1
 

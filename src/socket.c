@@ -122,6 +122,7 @@ static struct sq_fifo *add_sq(struct send_queue *sq, void *buff)
     if (sq->sq_len == MAX_SEND_QUEUE)
     {
         LOGERR("[!] Max send queue reached\n");
+        errno = ERANGE;
         return NULL;
     }
 

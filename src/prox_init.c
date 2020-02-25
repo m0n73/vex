@@ -134,7 +134,8 @@ struct proxy_config *init_proxy(int argc, char **argv)
     if ((pc->listen_fd = start_socket(pc->loc_addr, pc->loc_port,
                     pc->bind_local, pc->tmout)) == -1) 
     {
-        LOGERR("start_socket: %s\n", strerror(errno));
+        LOGERR("[!] Faied to initialize a socket for %s:%s\n",
+                pc->loc_addr, pc->loc_port);
         goto fail;
     }
 
