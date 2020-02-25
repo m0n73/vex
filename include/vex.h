@@ -36,6 +36,7 @@
 #include "v_util.h"
 #include "v_config.h"
 #include "v_socket.h"
+#include "v_asyncio.h"
 #include "v_socks.h"
 #include "v_parse.h"
 

@@ -7,7 +7,7 @@ CFLAGS=-O2 -D_FORTIFY_SOURCE=2 -Werror=implicit-function-declaration -Wall -Werr
 VPATH=src/
 BUILD=build
 
-SRC=socket.c main.c prox_init.c socks.c socks4.c socks5.c socks_target.c parse.c util.c
+SRC=asyncio.c socket.c main.c prox_init.c socks.c socks4.c socks5.c socks_target.c parse.c util.c
 OBJ=$(SRC:%.c=$(BUILD)/%.o)
 
 .PHONY: clean 
