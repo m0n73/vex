@@ -3,6 +3,7 @@
 
 #define MAX_SEND_QUEUE  10
 #define IOBUFF_SZ       4096
+#define SELECT_TMOUT    1
 
 struct sq_fifo {
     uint8_t *buff;

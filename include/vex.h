@@ -10,6 +10,7 @@
 #include <netdb.h>
 #include <limits.h>
 #include <arpa/inet.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/types.h>

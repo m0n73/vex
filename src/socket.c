@@ -1,5 +1,12 @@
 #include <vex.h>
 
+int terminate = 0;
+
+static void handle_termination(int sig)
+{
+    terminate = sig;
+}
+
 static struct sq_fifo *init_sq_fifo(void *buff)
 {
     struct sq_fifo *ret = NULL;
@@ -296,13 +303,44 @@ int start_socket(const char *host, const char *port, int server, long tmout)
 
 void event_loop(struct proxy_config *pc)
 {
-    int max = 0;
+    int max = 0, select_rd;
     struct send_queue *up_sq = init_sq(),
                       *dn_sq = init_sq();
+    struct timeval tv;
+    struct sigaction sigs;
+    sigset_t temp_mask, old_mask;
+    
 
     if (!up_sq || !dn_sq) return;
 
     fd_set r_test, r_ready, w_test, w_ready;
+
+    memset(&sigs, '\0', sizeof(struct sigaction));
+    memset(&tv, '\0', sizeof(struct timeval));
+
+    tv.tv_sec = 1;
+
+    sigs.sa_handler = handle_termination;
+    sigs.sa_flags = SA_RESTART;
+    sigemptyset(&sigs.sa_mask);
+    sigemptyset(&temp_mask);
+
+    sigaddset(&temp_mask, SIGINT);
+    sigaddset(&temp_mask, SIGTERM);
+
+    if (sigaction(SIGINT, &sigs, NULL) == -1)
+    {
+        LOGERR("sigaction: %s\n", strerror(errno));
+        return;
+    }
+
+    if (sigaction(SIGTERM, &sigs, NULL) == -1)
+    {
+        LOGERR("sigaction: %s\n", strerror(errno));
+        return;
+    }
+
+    sigprocmask(SIG_BLOCK, &temp_mask, &old_mask);
 
     FD_ZERO(&r_test);
     FD_ZERO(&r_ready);
@@ -332,16 +370,30 @@ void event_loop(struct proxy_config *pc)
     FD_SET_MAX(max, pc->socks_fd, &r_test);
     FD_SET_MAX(max, pc->client_fd, &r_test);
 
+    sigprocmask(SIG_SETMASK, &old_mask, NULL);
+
     while (1)
     {
         memcpy(&r_ready, &r_test, sizeof(fd_set));
         memcpy(&w_ready, &w_test, sizeof(fd_set));
 
-        if (select(max, &r_ready, &w_ready, NULL, NULL) == -1)
+        if ((select_rd = select(max, &r_ready, &w_ready, NULL, &tv)) == -1)
         {
-            LOGERR("select: %s\n", strerror(errno));
-            goto exit_loop;
+            if (errno != EINTR)
+            {
+                LOGERR("select: %s\n", strerror(errno));
+                goto exit_loop;
+            } else {
+                if (terminate) 
+                {
+                    sigprocmask(SIG_BLOCK, &temp_mask, &old_mask);
+                    LOGUSR("[-] Terminating...\n");
+                }
+                continue;
+            }
         }
+
+        if (!select_rd) tv.tv_sec = 1;
 
         if (FD_ISSET(pc->client_fd, &w_ready))
         {
@@ -393,6 +445,9 @@ void event_loop(struct proxy_config *pc)
             FD_SET(pc->client_fd, &w_test);
         }
 
+        if (terminate) {
+            goto exit_loop;
+        }
     }
 exit_loop:
     close(pc->client_fd);
