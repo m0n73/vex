@@ -1,10 +1,13 @@
 # vex
-`vex` is a reverse connection helper for SOCKS4/5. 
+`vex` is an asynchronous reverse connection helper for SOCKS4/5. 
 `vex` will connect to a remote SOCKS proxy and request it
 to `BIND`. The other end of the connection will either be `vex`
 binding to a port on the local machine or it connecting to
 another listener.
 
+This code is not meant to encourage you to do someting stupid,
+please use `vex` for educational purposes or with the express
+permission of the target system's owner.
 
 ## Building vex
 ```bash
@@ -82,8 +85,3 @@ you will see something like this:
 [+] SOCKS5 MSG: SUCCESS (<target_address>:<incoming_port>)
 ```
 Note that SOCKS5 proxies often (if not always) requrire a legit target address in the BIND request.
-## Notes
-This code is still in development stages -- use it at your own risk.
-
-**REMEMBER:** If you get caught doing retarded shit while using `vex` - 
-it's your responsibility. Please only use this software for legit purposes.
